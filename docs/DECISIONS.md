@@ -308,6 +308,8 @@ Canonical, hreflang recíproco, metadados Open Graph/Twitter, imagens PNG locais
 
 **Consequência.** Chaves `landing.lead` e `landing.startNote` reescritas nos dois idiomas; a headline inglesa ganhou um espaço inseparável em "No sign-up" para quebrar em três linhas parelhas. CSS: `.landing-hero` em grade, `.hero-copy`, `.hero-art`, `.landing-cta` na marca com `cta-wiggle`. Testes de navegador: mascote visível, botão principal na cor da marca e o da barra não.
 
+**Revisão (2026-09-06).** Depois do selo da loja (D29), o Miguel aprovou o botão principal no mesmo estilo cartoon: cantos de 16 px, borda de 2 px e sombra sólida de 4 px no tom escuro da marca (`--color-brand-deep`, `#4b53c7`), afundando ao clicar. A cápsula com sombra difusa saiu. O tremor no hover (D28) ficou.
+
 ## D28 — Como funciona pela rolagem, tremor do botão e a página de perguntas (2026-09-06)
 
 **Escolha.**

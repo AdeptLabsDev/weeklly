@@ -47,6 +47,7 @@
      temas, reservada à marca; a interface segue monocromática (D22). */
   --color-brand: #727cf5;
   --color-brand-contrast: #ffffff;
+  --color-brand-deep: #4b53c7;
   /* Faixa na tonalidade da marca (aplicativos na landing): escura no tema
      escuro, clara no claro. */
   --color-band: #101228;
@@ -1741,27 +1742,31 @@
      treme na horizontal, em ciclos curtos com pausa, como um toque de
      atenção (referência: "Shake" do CSS-Tricks, sem rotação). Com "reduzir
      movimento", só a sombra sobe. */
+  /* O mesmo estilo cartoon do selo da loja (D29), na cor da marca: borda
+     grossa e sombra sólida no tom escuro da marca, afunda ao clicar. */
   .landing-cta {
-    height: 52px;
+    height: 54px;
     padding: 0 26px;
-    border-color: var(--color-brand);
+    border: 2px solid var(--color-brand-deep);
+    border-radius: 16px;
     background: var(--color-brand);
     color: var(--color-brand-contrast);
     font-size: 16px;
-    font-weight: 600;
-    box-shadow: 0 10px 28px -12px color-mix(in oklab, var(--color-brand) 85%, transparent);
-    transition: box-shadow 200ms ease, filter 200ms ease;
+    font-weight: 700;
+    box-shadow: 0 4px 0 var(--color-brand-deep);
+    transition: box-shadow 120ms ease, filter 200ms ease;
   }
   .landing-cta:hover {
-    border-color: var(--color-brand);
+    border-color: var(--color-brand-deep);
     background: var(--color-brand);
     filter: brightness(1.08);
-    box-shadow: 0 16px 36px -12px color-mix(in oklab, var(--color-brand) 90%, transparent);
     animation: cta-shake 1.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
   }
   .landing-cta:active {
     filter: brightness(0.96);
     animation: none;
+    transform: translateY(4px);
+    box-shadow: 0 0 0 var(--color-brand-deep);
   }
   @keyframes cta-shake {
     0%,
