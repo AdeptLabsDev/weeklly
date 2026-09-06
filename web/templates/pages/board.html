@@ -1,0 +1,42 @@
+{{define "content"}}
+<div class="shell">
+  <div class="topbar">
+    <h1 class="sr-only">{{.Data.Name}}</h1>
+    <p class="subtitle">Hoje é {{.Data.TodayLongName}}.<span class="save-status" aria-live="polite" data-status></span></p>
+    <nav class="toolbar" aria-label="Ações da semana">
+      <a class="toolbar-btn" href="#hoje" data-action="today">Ir para hoje</a>
+    </nav>
+  </div>
+
+  <main class="board" aria-label="Dias da semana. Deslize para o lado ou use as setas do teclado." tabindex="0">
+    <ol class="week">
+      {{range .Data.Days}}
+      <li class="card{{if .IsToday}} is-today{{end}}" id="dia-{{.Weekday}}" data-weekday="{{.Weekday}}">
+        <header class="card-head">
+          <h2 class="card-name"{{if .IsToday}} id="hoje"{{end}}>{{.Name}}</h2>
+          {{if .IsToday}}<span class="card-today">hoje</span>{{end}}
+        </header>
+        <div class="card-body">
+          <ol class="tasks" aria-label="Tarefas de {{.LongName}}">
+            {{range .Tasks}}{{template "task-item" .}}{{end}}
+          </ol>
+          <p class="tasks-empty"{{if .Tasks}} hidden{{end}}>Nada aqui ainda. Clique para adicionar a primeira tarefa.</p>
+        </div>
+        <form class="task-add" method="post" action="/semana/{{$.Data.ID}}/tarefas" data-weekday="{{.Weekday}}">
+          <input type="hidden" name="weekday" value="{{.Weekday}}">
+          <input class="task-add-title" type="text" name="title" placeholder="Nova tarefa…" maxlength="200" required autocomplete="off" aria-label="Nova tarefa em {{.LongName}}">
+          <input class="task-add-time timefield" type="text" name="time" inputmode="numeric" placeholder="hh:mm" maxlength="5" autocomplete="off" aria-label="Horário, opcional">
+          <button type="submit" class="task-add-btn" aria-label="Adicionar tarefa">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
+          </button>
+        </form>
+      </li>
+      {{end}}
+    </ol>
+  </main>
+
+  <nav class="pager" aria-label="Ir para um dia">
+    {{range .Data.Days}}<button type="button" class="pager-dot{{if .IsToday}} is-today{{end}}" data-weekday="{{.Weekday}}" aria-label="Ir para {{.LongName}}">{{.Short}}</button>{{end}}
+  </nav>
+</div>
+{{end}}

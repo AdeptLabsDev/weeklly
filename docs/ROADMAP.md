@@ -1,13 +1,15 @@
 # Weekly Planner — Roadmap
 
-> Estado: planejamento (etapa 1). Atualizado em 2026-09-05.
-> Próxima etapa: definição da stack (Fase 0).
+> Estado: Fase 0 construída e núcleo da Fase 1 entregue (tarefas por dia com salvamento no ato), com hub, seletor, ações de semana e login com o Google adiantados das Fases 2 e 3. Monocromático até a cor de destaque ser definida. Falta CI verde no GitHub e aprovação visual. Atualizado em 2026-09-06.
+> Decisões em [DECISIONS.md](DECISIONS.md). Stack fechada: Go. Acompanhamento em [BACKLOG.md](BACKLOG.md).
 
 ## 0. Em uma frase
 
-Um planejador semanal pessoal: sete dias em um quadro fixo, texto livre em cada dia, salvo sozinho, aberto em menos de um segundo. Site primeiro, app depois.
+Um planejador semanal pessoal: uma semana com nome, sete dias lado a lado num quadro fixo, texto livre em cada dia, salvo sozinho, aberto em menos de um segundo. Site primeiro, app depois.
 
 ## 1. Tese e princípios
+
+**A dor.** O planejamento semanal de uma pessoa costuma ser o mesmo por várias semanas. Calendários obrigam a repetir cada tarefa em cada data, e isso vira trabalho. Aqui a semana é um espaço só: o usuário monta uma vez e consulta.
 
 **Tese.** A maioria dos planejadores falha por excesso: listas, tags, projetos, recorrências. Este produto aposta no oposto. Uma semana, sete blocos de texto, zero cerimônia. O valor está na velocidade de consulta e na ausência de atrito para escrever.
 
@@ -32,69 +34,79 @@ Um planejador semanal pessoal: sete dias em um quadro fixo, texto livre em cada 
 
 | Conceito | Definição |
 |---|---|
-| **Semana** | Sete dias consecutivos, de segunda a domingo, ancorados em datas reais do calendário. Identificada pela data da segunda-feira. |
-| **Dia** | Uma data dentro da semana e um bloco de texto livre. Tem seu próprio cartão (div) no quadro. |
-| **Quadro** | A superfície fixa e finita onde os sete cartões vivem. Fundo estático com grid de pontos. Sem pan, sem zoom. |
-| **Hub** | O navegador de semanas. Lista as semanas existentes, marca a atual, cria novas e troca a semana visível. |
+| **Semana** | Um espaço de planejamento com nome, dado pelo usuário: "Semana padrão", "Semana de provas". Sete dias, de segunda a domingo, sem datas. Monta-se uma vez e consulta-se sempre. |
+| **Dia** | Uma posição na semana (segunda a domingo) e a lista de tarefas daquele dia, na ordem que a pessoa deu. Tem seu próprio cartão no quadro. |
+| **Tarefa** | Um item do plano de um dia: título, horário opcional e se já foi feita. |
+| **Quadro** | O espaço aberto onde os sete cartões vivem, lado a lado, do mesmo tamanho. Grid de pontos na página inteira. Desliza só na horizontal; sem zoom. |
+| **Hub** | A lista das semanas do usuário, as usadas mais recentemente primeiro. Cria semanas novas e troca a semana visível. |
 
 ### Invariantes (o sistema nunca quebra)
 
-1. Uma semana tem exatamente sete dias, consecutivos, datados.
-2. Não existem duas semanas para o mesmo intervalo de datas por usuário. A data de início é a identidade da semana.
+1. Uma semana tem exatamente sete dias, de segunda a domingo. Toda tarefa pertence a um deles.
+2. Uma semana é identificada por um id opaco, gerado pelo sistema. O nome é livre, de 1 a 60 caracteres, e pode mudar.
 3. Todo dia pertence a exatamente uma semana.
-4. Toda edição é persistida sem ação explícita. Não existe botão "salvar".
+4. Toda edição é persistida no ato: adicionar, editar, concluir ou excluir uma tarefa já salva. Não existe botão "salvar".
 5. Apenas uma semana é visível por vez.
-6. O quadro tem tamanho fixo. O conteúdo de um dia rola dentro do seu cartão, nunca estoura o quadro.
-7. "Hoje" e "semana atual" são calculados no fuso horário do usuário.
+6. O quadro é finito: sete cartões iguais numa faixa horizontal, sem zoom e sem rolagem vertical. O usuário desliza para o lado para ver os dias. O conteúdo de um dia rola dentro do seu cartão, nunca estoura o quadro.
+7. "Hoje" é o dia da semana atual no fuso horário do usuário. É a única coisa que o calendário decide.
 
 ### Modelo de dados (conceitual, independente de stack)
 
 ```
 Semana
-  id
+  id              → opaco, 16 caracteres, gerado pelo sistema
   dono            → usuário
-  inicio          → data da segunda-feira (única por dono)
-  dias[7]
-    data
-    texto
-    atualizadoEm  → por dia, para sincronização
+  nome            → texto livre, 1 a 60 caracteres
+  tarefas[]
+    id
+    diaDaSemana   → 0 (segunda) a 6 (domingo)
+    posição       → ordem manual dentro do dia
+    título        → 1 a 200 caracteres
+    horário       → HH:MM ou nenhum
+    feita
+    atualizadaEm  → por tarefa, para sincronização
   criadaEm
-  atualizadaEm
+  atualizadaEm    → muda quando qualquer tarefa muda; ordena o hub
+
+Usuário
+  ordemDasSemanas → recentes ou A–Z
 ```
 
-Por que `atualizadoEm` por dia e não só por semana: a sincronização entre dispositivos resolve conflitos no nível do dia (último a escrever vence). O domínio de conflito fica minúsculo e previsível.
+Por que `atualizadaEm` por tarefa e não só por semana: a sincronização entre dispositivos resolve conflitos no nível da tarefa (último a escrever vence). O domínio de conflito fica minúsculo e previsível.
 
 ### Fluxos principais
 
 | Fluxo | Passos | Meta |
 |---|---|---|
-| Consultar | Abrir o app → semana atual aparece, hoje destacado | < 1 s frio, < 100 ms com cache |
-| Editar | Clicar no dia → digitar → indicador "Salvo" | latência de digitação zero; persistido em < 1 s após parar |
-| Criar semana | Hub → "Nova semana" → confirma a semana sugerida (a próxima sem plano) ou escolhe outra → quadro abre | 2 cliques |
-| Trocar semana | Hub → clicar na semana, ou atalhos ← →, ou "Ir para hoje" | < 100 ms |
+| Consultar | Abrir o app → a última semana usada aparece, com o dia de hoje no centro | < 1 s frio, < 100 ms com cache |
+| Planejar | Escrever a tarefa no pé do cartão, horário se quiser, Enter → ela aparece e "Salvo" | persistida em < 1 s |
+| Editar | Clicar no título ou no horário → mudar → Enter. Marcar a caixa conclui. | no ato |
+| Criar semana | Hub → "Nova semana" → dar um nome → quadro abre vazio | 2 cliques |
+| Trocar semana | Hub → clicar na semana | < 100 ms |
 | Sair | Fechar a aba a qualquer momento | zero perda de texto |
 
 ### Endereçamento
 
-Cada semana tem uma URL própria pela data de início, no formato `/semana/2026-09-07`. Isso dá deep link, histórico do navegador e um contrato simples para o app reutilizar.
+Cada semana tem uma URL própria pelo id, no formato `/semana/k7m2p9xq4w3n8r5t`. Isso dá deep link, histórico do navegador e um contrato simples para o app reutilizar. O id é opaco de propósito: não revela quantas semanas existem nem permite adivinhar outras.
 
-### Esboço do quadro no desktop
+### Esboço do quadro
 
-Esboço da recomendação de layout (decisão 6), não o design. Fim de semana empilhado na sexta coluna.
+Faixa horizontal de sete cartões iguais (D11). A tela mostra dois ou três por vez; o resto está ao lado, fora da borda, e o usuário desliza. Abaixo da faixa, o paginador com os sete dias abreviados mostra quais estão visíveis e leva ao dia clicado.
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  7 – 13 set 2026                                [Hub] [Hoje] │
-│ ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  │
-│ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐        │
-│ │ SEG  │ │ TER  │ │ QUA  │ │ QUI  │ │ SEX  │ │ SÁB  │        │
-│ │  7   │ │  8   │ │  9   │ │  10  │ │  11  │ │  12  │        │
-│ │      │ │      │ │      │ │      │ │      │ ├──────┤        │
-│ │      │ │      │ │      │ │      │ │      │ │ DOM  │        │
-│ │      │ │      │ │      │ │      │ │      │ │  13  │        │
-│ └──────┘ └──────┘ └──────┘ └──────┘ └──────┘ └──────┘        │
-│ ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  │
-└──────────────────────────────────────────────────────────────┘
+ ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·
+ Semana padrão                                        ( Ir para hoje )
+ Hoje é sábado.
+ ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·
+      ┐   ┌────────────────┐   ┌────────────────┐   ┌────────────
+      │   │ Sexta          │   │ Sábado   hoje  │   │ Domingo
+      │   ├────────────────┤   ├────────────────┤   ├────────────
+      │   │ Revisão da     │   │ Feira          │   │ Sem plano
+      │   │ semana         │   │ Caminhada      │   │ ainda
+      │   │                │   │                │   │
+      ┘   └────────────────┘   └────────────────┘   └────────────
+ ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·
+                  seg   ter   qua   qui   sex   sáb   dom
 ```
 
 ## 3. Fases
@@ -119,12 +131,13 @@ Sem datas: projeto pessoal, o ritmo é seu. Tamanho indica esforço relativo (S,
 **Objetivo.** Usar o produto de verdade na sua própria semana, ainda sem hub e sem conta.
 
 **Entregas**
-- Quadro fixo com sete cartões datados. Semana atual detectada pelo fuso do usuário. Hoje destacado.
+- Uma semana real, criada com nome, com os sete cartões. Hoje destacado pelo fuso do navegador, não mais pelo fuso configurado no servidor.
 - Editor de texto livre por dia, com o cartão rolando internamente.
 - Autosave em três gatilhos: pausa na digitação, perda de foco, saída da página. Indicador discreto de estado (salvo, salvando).
 - Persistência local. Não é descartável: vira a camada de cache da Fase 3.
 - Atalhos básicos: navegar entre dias pelo teclado, foco visível.
-- Testes da matemática de datas: virada de ano, semana 53, fusos, horário de verão.
+- O arrastar da faixa ignora o editor: arrastar dentro do texto seleciona, arrastar fora navega.
+- Testes do dia da semana por fuso, do autosave e da persistência.
 
 **Critério de saída.** Você usa por sete dias seguidos sem perder uma tecla e sem pensar no app.
 
@@ -133,10 +146,10 @@ Sem datas: projeto pessoal, o ritmo é seu. Tamanho indica esforço relativo (S,
 **Objetivo.** Várias semanas com navegação que não parece carregar.
 
 **Entregas**
-- Hub: lista de semanas agrupada por mês e ano. Semana atual marcada. Semanas com conteúdo distinguíveis das vazias.
-- Criar semana: sugere a próxima semana sem plano; permite escolher qualquer data, passado incluído.
+- Hub: lista das semanas do usuário, as usadas mais recentemente primeiro. Semana aberta marcada. Semanas com conteúdo distinguíveis das vazias.
+- Criar semana: pedir só o nome e abrir o quadro vazio. Renomear e excluir a partir do hub.
 - Trocar semana em menos de 100 ms, com as semanas vizinhas pré-carregadas.
-- Atalhos ← → entre semanas e "Ir para hoje".
+- Abrir o app volta para a última semana usada.
 - URL por semana, histórico do navegador funcionando.
 - Excluir semana com confirmação e desfazer.
 
@@ -189,7 +202,7 @@ Sem datas: projeto pessoal, o ritmo é seu. Tamanho indica esforço relativo (S,
 **Objetivo.** Preparar o app sem reescrever nada.
 
 **Entregas**
-- Núcleo compartilhado isolado como pacote: modelo, matemática de datas, validação, lógica de sync.
+- Núcleo compartilhado isolado como pacote: modelo, dia da semana por fuso, validação, lógica de sync.
 - Contrato de API documentado e versionado.
 - Tokens de design exportáveis para o app.
 - Decisão da tecnologia do app (nativo, multiplataforma ou PWA empacotado) com razão escrita.
@@ -229,12 +242,13 @@ Cada uma tem recomendação. Confirme ou mude antes da fase indicada. Sem respos
 
 | # | Decisão | Recomendação | Por quê | Decidir até |
 |---|---|---|---|---|
-| 1 | Um usuário só ou contas para várias pessoas? | Contas desde o início; modelo de dados com dono desde a Fase 1 | O site é público e o app virá. Adicionar dono depois é migração; ter desde o início é uma coluna. | Fase 0 |
-| 2 | Semana começa em segunda ou domingo? | Segunda (ISO 8601, convenção BR) | Alinha com a matemática de semanas padrão. Configurável depois sem migração. | Fase 0 |
+| 1 | Um usuário só ou contas para várias pessoas? | **Decidido (2026-09-05): contas.** Modelo de dados com dono desde a Fase 1. | O site é público, o app virá e o produto pode expandir. Ver D2. | — |
+| 2 | Semana começa em segunda ou domingo? | **Decidido (2026-09-05): segunda.** A posição 0 é segunda e a 6 é domingo, no banco e no código. | Convenção brasileira e ISO. Ver D9. | — |
 | 3 | Semana atual é criada ao abrir ou explicitamente? | Implícita para a semana atual (persistida na primeira tecla); explícita no hub para as demais | Zera o atrito da consulta diária, que é o fluxo principal. | Fase 1 |
 | 4 | Texto livre ou lista com checkbox? | Texto livre no v1 | É o que foi pedido. Linhas iniciadas com `- ` podem virar checkbox depois sem migração. | Fase 1 |
-| 5 | Tema: Miro é claro; padrão Higher Mind é dark-first | Dark-first com a gramática do Miro (grid de pontos, cartões, toolbar flutuante); tema claro na Fase 4 | Mantém a referência sem virar cópia e respeita o padrão. | Fase 0 |
-| 6 | Layout desktop: 7 colunas ou 5 + 2 (fim de semana empilhado)? | 5 + 2 | Sete colunas ficam estreitas em notebook; fim de semana costuma ter menos texto. Validar no protótipo da Fase 0. | Fase 0 |
+| 5 | Tema: Miro é claro; padrão Higher Mind é dark-first | **Decidido (2026-09-05): dark-first** com a gramática do Miro; tema claro na Fase 4. | Mantém a referência sem virar cópia e respeita o padrão. Ver D1. | — |
+| 6 | Layout do quadro | **Decidido (2026-09-05): faixa horizontal de sete cartões iguais**, deslizando para o lado. Substitui o 5 + 2. | Todos os dias são o mesmo espaço; a tela é fixa mas o ambiente é aberto. Ver D11. | — |
+| 9 | A semana é ancorada em datas do calendário ou é um espaço sem datas? | **Decidido (2026-09-05): espaço sem datas**, com nome dado pelo usuário; "hoje" destaca o dia da semana atual. | É a dor descrita: não repetir o plano data a data. Ver D12. | — |
 | 7 | Criar semanas no passado? | Sim, sem restrição | É um registro. O hub prioriza presente e futuro. | Fase 2 |
 | 8 | Hub: barra lateral ou sobreposição? | Decidir no protótipo | Depende do layout do quadro. | Fase 2 |
 
@@ -248,7 +262,7 @@ Nada disso está proibido para sempre. Está fora até o v1 provar a tese.
 
 | Risco | Mitigação |
 |---|---|
-| Matemática de datas errada (fuso, virada de ano, semana 53) | Testes desde a Fase 1, cálculo sempre no fuso do usuário, data de início como identidade. |
+| "Hoje" errado por fuso horário | Dia da semana calculado no fuso do usuário, em um único ponto do código, com teste. |
 | Perda de texto no autosave (aba fechada, rede caiu) | Rascunho local sempre à frente, três gatilhos de salvamento, fila offline. |
 | Conflito entre dispositivos | Último a escrever vence por dia com relógio do servidor. Domínio pequeno, resultado previsível. |
 | Escopo crescer até virar gestor de tarefas | Invariantes e fora-de-escopo funcionam como contrato. Mudar exige mudar este documento. |
@@ -257,4 +271,4 @@ Nada disso está proibido para sempre. Está fora até o v1 provar a tese.
 
 ## 8. Próximo passo
 
-Fase 0. Definir a stack com `/hm-init`, registrar cada escolha com razão em `docs/DECISIONS.md`, e fechar as decisões 1, 2, 5 e 6 acima.
+Fase 0 construída (D1 a D16). Da Fase 2 já existem hub, seletor, criação de semana, URL por semana e "abrir onde parou"; da Fase 3, sessões e login com o Google. Para fechar a Fase 0: primeiro push com CI verde e aprovação visual. Em seguida, o núcleo da Fase 1: editor por dia com autosave. Acompanhamento em `docs/BACKLOG.md`.

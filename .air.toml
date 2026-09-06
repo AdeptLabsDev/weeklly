@@ -1,0 +1,21 @@
+# Recarga automática em desenvolvimento. Só o Go dispara rebuild: templates e
+# CSS são lidos do disco a cada requisição quando WEEKLLY_ENV=development.
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/weeklly.exe ./cmd/weeklly"
+  bin = "./tmp/weeklly.exe"
+  include_ext = ["go", "sql"]
+  exclude_dir = ["tmp", "bin", "data", "docs", "web", ".tools", ".git", ".github"]
+  exclude_regex = ["_test\\.go$"]
+  delay = 250
+  kill_delay = "500ms"
+  stop_on_error = true
+
+[log]
+  main_only = true
+  time = false
+
+[misc]
+  clean_on_exit = true

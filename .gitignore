@@ -1,0 +1,30 @@
+# Segredos e ambiente local
+.env
+.env.*
+!.env.example
+
+# Artefatos de build e cache do Task
+/bin/
+/tmp/
+/.tools/
+/.task/
+/web/static/app.css
+
+# Dados locais: SQLite e seus arquivos de WAL
+/data/
+*.db
+*.db-wal
+*.db-shm
+
+# Editores e sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Testes ponta a ponta (Node só aqui, nunca no produto)
+/e2e/node_modules/
+/e2e/test-results/
+/e2e/playwright-report/
+/e2e/screenshots/
+/e2e/.bin/

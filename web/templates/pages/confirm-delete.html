@@ -1,0 +1,7 @@
+{{define "content"}}
+<main class="page page-narrow">
+  <h1 class="page-title">Excluir {{.Data.Name}}?</h1>
+  <p class="page-lead">As tarefas desta semana vão junto. Isso não tem volta.</p>
+  {{template "delete-form" .Data}}
+</main>
+{{end}}

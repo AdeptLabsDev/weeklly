@@ -1,0 +1,130 @@
+# Comandos do projeto. Instale o Task com `go install github.com/go-task/task/v3/cmd/task@latest`.
+# Os mesmos comandos rodam no Windows, Linux e macOS: o Task traz o próprio interpretador de shell.
+version: "3"
+
+dotenv: [".env"]
+
+vars:
+  TAILWIND: .tools/tailwindcss{{exeExt}}
+  VERSION:
+    sh: git describe --tags --always --dirty 2>/dev/null || echo dev
+
+tasks:
+  default:
+    cmds:
+      - task --list
+
+  tools:
+    desc: Baixa o CLI standalone do Tailwind (versão e checksum fixados em tools/tailwind)
+    cmds:
+      - go run ./tools/tailwind
+
+  css:
+    desc: Compila o CSS de produção (minificado) para web/static/app.css
+    deps: [tools]
+    sources:
+      - web/styles/**/*.css
+      - web/templates/**/*.html
+    generates:
+      - web/static/app.css
+    cmds:
+      - "{{.TAILWIND}} -i web/styles/app.css -o web/static/app.css --minify"
+
+  css:watch:
+    desc: Recompila o CSS a cada mudança
+    deps: [tools]
+    cmds:
+      - "{{.TAILWIND}} -i web/styles/app.css -o web/static/app.css --watch"
+
+  dev:
+    desc: Servidor com recarga automática (air) e CSS em watch. Requer .env com WEEKLLY_ENV=development
+    deps: [css:watch, air]
+
+  air:
+    internal: true
+    cmds:
+      - air
+
+  build:
+    desc: Compila o binário de produção em bin/
+    deps: [css]
+    cmds:
+      - go build -trimpath -ldflags "-s -w -X main.version={{.VERSION}}" -o bin/weeklly{{exeExt}} ./cmd/weeklly
+
+  run:
+    desc: Compila e roda o binário de produção
+    deps: [build]
+    cmds:
+      - bin/weeklly{{exeExt}}
+
+  test:
+    desc: Testes unitários e de handler
+    cmds:
+      - go test -count=1 ./...
+
+  test:race:
+    desc: Testes com detector de corrida (precisa de cgo; use no CI Linux)
+    cmds:
+      - go test -race -count=1 ./...
+
+  e2e:
+    desc: Testes ponta a ponta com Playwright (sobe o servidor sozinho). Antes, uma vez, `task e2e:install`
+    deps: [css]
+    dir: e2e
+    cmds:
+      - npx playwright test
+
+  e2e:shots:
+    desc: Só os testes que tiram capturas de tela, em e2e/screenshots
+    deps: [css]
+    dir: e2e
+    cmds:
+      - npx playwright test --grep @shots
+
+  e2e:install:
+    desc: Instala o Playwright e o Chromium de teste (Node só em e2e/, nunca no produto)
+    dir: e2e
+    cmds:
+      - npm install --no-fund --no-audit
+      - npx playwright install chromium
+
+  vet:
+    cmds:
+      - go vet ./...
+
+  lint:
+    desc: golangci-lint com a configuração do repositório
+    cmds:
+      - golangci-lint run
+
+  vuln:
+    desc: Vulnerabilidades conhecidas nas dependências e na stdlib
+    cmds:
+      - govulncheck ./...
+
+  check:
+    desc: Tudo que o CI roda, na ordem
+    cmds:
+      - task: vet
+      - task: lint
+      - task: test
+      - task: vuln
+      - task: build
+
+  docker:build:
+    desc: Constrói a imagem de produção
+    cmds:
+      - docker build --build-arg VERSION={{.VERSION}} -t weeklly:local .
+
+  docker:up:
+    desc: Sobe a imagem de produção localmente em http://127.0.0.1:8080
+    cmds:
+      - docker compose up --build -d
+
+  docker:down:
+    cmds:
+      - docker compose down
+
+  docker:logs:
+    cmds:
+      - docker compose logs -f app

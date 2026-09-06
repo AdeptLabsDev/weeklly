@@ -1,0 +1,7 @@
+{{define "content"}}
+<main class="page page-narrow">
+  <h1 class="page-title">{{.Data.Heading}}</h1>
+  <p class="page-lead">{{.Data.Body}}</p>
+  {{if .Data.LinkURL}}<p><a class="btn" href="{{.Data.LinkURL}}">{{.Data.LinkText}}</a></p>{{end}}
+</main>
+{{end}}

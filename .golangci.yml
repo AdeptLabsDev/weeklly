@@ -1,0 +1,45 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errorlint
+    - exhaustive
+    - gocritic
+    - gosec
+    - nilerr
+    - noctx
+    - nolintlint
+    - revive
+    - rowserrcheck
+    - sqlclosecheck
+    - unconvert
+    - unparam
+    - wastedassign
+  settings:
+    revive:
+      rules:
+        - name: exported
+          arguments: ["checkPrivateReceivers", "disableStutteringCheck"]
+  exclusions:
+    generated: lax
+    presets:
+      - std-error-handling
+      - common-false-positives
+    rules:
+      - path: _test\.go
+        linters: [gosec, noctx, bodyclose]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/AdeptLabsDev/weeklly

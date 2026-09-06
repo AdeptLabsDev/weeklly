@@ -1,0 +1,25 @@
+# Imagem de produção rodando localmente. Desenvolvimento usa `task dev`
+# direto na máquina: com SQLite não há serviço externo para orquestrar.
+services:
+  app:
+    build:
+      context: .
+    image: weeklly:local
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      WEEKLLY_ENV: production
+      WEEKLLY_ADDR: ":8080"
+      WEEKLLY_DB_PATH: /data/weeklly.db
+      WEEKLLY_TIMEZONE: ${WEEKLLY_TIMEZONE:-America/Sao_Paulo}
+    volumes:
+      # Dados são sagrados: volume nomeado, nunca bind mount anônimo.
+      - weeklly-data:/data
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+volumes:
+  weeklly-data:

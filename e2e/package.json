@@ -1,0 +1,12 @@
+{
+  "name": "weeklly-e2e",
+  "private": true,
+  "description": "Testes ponta a ponta e capturas de tela do weeklly. Ferramenta de desenvolvimento: nada daqui vai para o produto.",
+  "scripts": {
+    "test": "playwright test",
+    "shots": "playwright test --grep @shots"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0"
+  }
+}

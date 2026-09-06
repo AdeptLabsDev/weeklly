@@ -1,0 +1,38 @@
+{{define "week-form"}}
+<form class="form" method="post" action="{{.Action}}" novalidate>
+  <label class="field">
+    <span class="field-label">Nome da semana</span>
+    <input class="field-input" type="text" name="name" value="{{.Name}}" maxlength="60" required autocomplete="off" placeholder="Semana padrão…"{{if .Error}} aria-invalid="true"{{end}}>
+  </label>
+  {{if .Error}}<p class="field-error">{{.Error}}</p>{{end}}
+  <div class="form-actions">
+    <a class="btn" href="{{.Cancel}}" data-close-dialog>Cancelar</a>
+    <button type="submit" class="btn btn-primary">{{.Submit}}</button>
+  </div>
+</form>
+{{end}}
+
+{{define "week-dialog"}}
+<dialog id="{{.ID}}" class="modal" aria-labelledby="{{.ID}}-title">
+  <h2 class="modal-title" id="{{.ID}}-title">{{.Form.Heading}}</h2>
+  <p class="modal-lead">{{.Form.Lead}}</p>
+  {{template "week-form" .Form}}
+</dialog>
+{{end}}
+
+{{define "delete-form"}}
+<form class="form" method="post" action="{{.Action}}">
+  <div class="form-actions">
+    <a class="btn" href="{{.Cancel}}" data-close-dialog>Cancelar</a>
+    <button type="submit" class="btn btn-danger">Excluir semana</button>
+  </div>
+</form>
+{{end}}
+
+{{define "delete-dialog"}}
+<dialog id="delete-week" class="modal" aria-labelledby="delete-week-title">
+  <h2 class="modal-title" id="delete-week-title">Excluir {{.Name}}?</h2>
+  <p class="modal-lead">As tarefas desta semana vão junto. Isso não tem volta.</p>
+  {{template "delete-form" .}}
+</dialog>
+{{end}}
