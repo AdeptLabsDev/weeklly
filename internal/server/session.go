@@ -25,6 +25,11 @@ type visitor struct {
 // desconhecido ou vencido é apagado no caminho.
 func (s *Server) withSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Descoberta pública não consulta nem renova sessões do aplicativo.
+		if publicPath(r.URL.Path) {
+			next.ServeHTTP(w, r)
+			return
+		}
 		var v visitor
 		if c, err := r.Cookie(sessionCookie); err == nil && c.Value != "" {
 			sess, user, err := s.opts.Store.SessionByToken(r.Context(), c.Value)

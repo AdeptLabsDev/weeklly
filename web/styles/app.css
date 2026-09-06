@@ -43,6 +43,24 @@
   --color-cursor: #ededed;
   --color-cursor-fill: #0a0a0a;
 
+  /* Cor principal da weeklly (D24): a do esquilo no ícone. Igual nos dois
+     temas, reservada à marca; a interface segue monocromática (D22). */
+  --color-brand: #727cf5;
+  --color-brand-contrast: #ffffff;
+  /* Faixa na tonalidade da marca (aplicativos na landing): escura no tema
+     escuro, clara no claro. */
+  --color-band: #101228;
+
+  /* Cores de destaque à escolha da pessoa (D22): tons de texto, legíveis
+     sobre o fundo de cada tema. */
+  --accent-orange: #ffa057;
+  --accent-amber: #ffca16;
+  --accent-green: #3dd68c;
+  --accent-blue: #70b8ff;
+  --accent-violet: #baa7ff;
+  --accent-pink: #ff8dcc;
+  --accent-red: #ff9592;
+
   --shadow-card: 0 1px 2px rgb(0 0 0 / 40%), 0 24px 48px -28px rgb(0 0 0 / 80%);
   --shadow-float: 0 12px 32px -12px rgb(0 0 0 / 70%);
   --radius-card: 18px;
@@ -65,10 +83,18 @@
     --color-accent-soft: rgb(23 23 23 / 8%);
     --color-danger: #e5484d;
     --color-danger-contrast: #ffffff;
+    --color-band: #eceeff;
     --color-glass: rgb(255 255 255 / 86%);
     --color-backdrop: rgb(0 0 0 / 35%);
     --color-cursor: #171717;
     --color-cursor-fill: #ffffff;
+    --accent-orange: #cc4e00;
+    --accent-amber: #ab6400;
+    --accent-green: #218358;
+    --accent-blue: #0d74ce;
+    --accent-violet: #6550b9;
+    --accent-pink: #c2298a;
+    --accent-red: #ce2c31;
     --shadow-card: 0 1px 2px rgb(0 0 0 / 6%), 0 20px 40px -28px rgb(0 0 0 / 25%);
     --shadow-float: 0 12px 32px -12px rgb(0 0 0 / 22%);
   }
@@ -99,6 +125,55 @@
   label,
   select {
     cursor: inherit;
+  }
+  html.has-cursor::view-transition {
+    cursor: none;
+  }
+  /* A casca do app não é texto para selecionar: sem seleção por duplo
+     clique na barra, nos títulos dos dias e nos menus. */
+  .nav,
+  .topbar,
+  .card-head,
+  .pager,
+  .menu {
+    user-select: none;
+  }
+
+  /* Cor de destaque (D22). Sem cor ("mono"), o destaque é o próprio texto.
+     Com uma cor, ela vai para o destaque, os textos principais (nome da
+     semana, dias, títulos) e o cursor. */
+  :root {
+    --color-display: var(--color-ink);
+  }
+  :root[data-accent="orange"] {
+    --color-accent: var(--accent-orange);
+  }
+  :root[data-accent="amber"] {
+    --color-accent: var(--accent-amber);
+  }
+  :root[data-accent="green"] {
+    --color-accent: var(--accent-green);
+  }
+  :root[data-accent="blue"] {
+    --color-accent: var(--accent-blue);
+  }
+  :root[data-accent="violet"] {
+    --color-accent: var(--accent-violet);
+  }
+  :root[data-accent="pink"] {
+    --color-accent: var(--accent-pink);
+  }
+  :root[data-accent="red"] {
+    --color-accent: var(--accent-red);
+  }
+  :root[data-accent]:not([data-accent="mono"]) {
+    --color-accent-contrast: #0a0a0a;
+    --color-accent-soft: color-mix(in srgb, var(--color-accent) 16%, transparent);
+    --color-display: var(--color-accent);
+    --color-cursor: var(--color-accent);
+  }
+  :root[data-theme="light"][data-accent]:not([data-accent="mono"]) {
+    --color-accent-contrast: #ffffff;
   }
   /* O grid de pontos cobre a página inteira: o quadro é o espaço, não uma
      caixa dentro dele (D11). */
@@ -187,6 +262,7 @@
     font-family: var(--font-display);
     font-weight: 800;
     letter-spacing: -0.01em;
+    color: var(--color-display);
   }
 
   /* ---- Cursor ------------------------------------------------------- */
@@ -283,6 +359,9 @@
   .theme-toggle {
     view-transition-name: theme-toggle;
   }
+  html.is-wiping-quiet .theme-toggle {
+    view-transition-name: none;
+  }
   .theme-icon {
     display: grid;
     width: 18px;
@@ -311,7 +390,7 @@
     border: 0;
     border-radius: 12px;
     background: transparent;
-    color: var(--color-ink);
+    color: var(--color-display);
     font-family: var(--font-display);
     font-weight: 800;
     font-size: 22px;
@@ -570,6 +649,9 @@
   .segmented-btn {
     position: relative;
     z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     height: 26px;
     padding: 0 12px;
     border: 0;
@@ -579,19 +661,87 @@
     font: inherit;
     font-size: 12.5px;
     font-weight: 500;
+    text-decoration: none;
     white-space: nowrap;
     transition: color 200ms ease;
   }
-  .segmented-btn[aria-pressed="true"] {
+  .segmented-btn[aria-pressed="true"],
+  .segmented-btn[aria-current="page"] {
     color: var(--color-ink);
   }
+  .segmented-icons .segmented-btn {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    padding: 0;
+  }
+  .segmented-icons svg {
+    width: 18px;
+    height: 18px;
+  }
 
-  /* Configurações: linhas "rótulo, valor". Uma linha com escolha abre um
-     painel próprio ao lado (menu-language), sem esticar este menu. */
+  /* Amostras de cor: círculos, o escolhido com anel. "Sem cor" mostra a cor
+     do texto, que é o destaque quando não há cor. */
+  .swatches {
+    display: flex;
+    gap: 6px;
+  }
+  .swatch {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: var(--swatch, var(--color-ink));
+    background-clip: content-box;
+    box-shadow: 0 0 0 1px var(--color-border);
+    transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 120ms ease;
+  }
+  .swatch:hover {
+    transform: scale(1.12);
+  }
+  .swatch[aria-pressed="true"] {
+    box-shadow: 0 0 0 1.5px var(--swatch, var(--color-ink));
+  }
+  .swatch-mono {
+    --swatch: var(--color-ink);
+  }
+  .swatch-orange {
+    --swatch: var(--accent-orange);
+  }
+  .swatch-amber {
+    --swatch: var(--accent-amber);
+  }
+  .swatch-green {
+    --swatch: var(--accent-green);
+  }
+  .swatch-blue {
+    --swatch: var(--accent-blue);
+  }
+  .swatch-violet {
+    --swatch: var(--accent-violet);
+  }
+  .swatch-pink {
+    --swatch: var(--accent-pink);
+  }
+  .swatch-red {
+    --swatch: var(--accent-red);
+  }
+
+  /* Configurações: linhas "rótulo, controle". O idioma abre um painel
+     próprio ao lado (menu-language), sem esticar este menu; tipo de mouse e
+     cor trocam no lugar. */
   .menu-settings {
     left: auto;
     right: var(--edge);
     width: min(320px, calc(100vw - 2 * var(--edge)));
+  }
+  .setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 12px 8px;
   }
   .setting-row {
     display: flex;
@@ -652,6 +802,7 @@
     gap: 2px;
   }
   .menu-option {
+    text-decoration: none;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -676,7 +827,8 @@
     height: 14px;
     opacity: 0;
   }
-  .menu-option[aria-current="true"] .menu-option-check {
+  .menu-option[aria-current="true"] .menu-option-check,
+  .menu-option[aria-current="page"] .menu-option-check {
     opacity: 1;
   }
 
@@ -697,6 +849,7 @@
   }
   .modal-title {
     margin: 0;
+    color: var(--color-display);
     font-family: var(--font-display);
     font-weight: 800;
     font-size: 26px;
@@ -770,6 +923,7 @@
   }
   .page-title {
     margin: 0 0 8px;
+    color: var(--color-display);
     font-family: var(--font-display);
     font-weight: 800;
     font-size: clamp(30px, 3.4vw, 40px);
@@ -811,6 +965,7 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    color: var(--color-display);
     font-family: var(--font-display);
     font-weight: 800;
     font-size: 22px;
@@ -962,6 +1117,7 @@
   }
   .card-name {
     margin: 0;
+    color: var(--color-display);
     font-family: var(--font-display);
     font-weight: 800;
     font-size: 28px;
@@ -1066,7 +1222,8 @@
     border-color: var(--color-border-strong);
   }
   .task-toggle,
-  .task-remove {
+  .task-remove,
+  .task-copy {
     display: contents;
   }
   .task-check {
@@ -1094,6 +1251,38 @@
   .task.is-done .task-check svg {
     opacity: 1;
   }
+  /* Concluir com movimento: a caixa pulsa, o traço do check se desenha e a
+     linha atravessa o título da esquerda para a direita. O script marca
+     is-just-done ao trocar a tarefa; sem script, o estado final é o mesmo. */
+  .task.is-just-done .task-check {
+    animation: task-check-pop 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .task.is-just-done .task-check svg path {
+    stroke-dasharray: 14;
+    animation: task-check-draw 260ms 60ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  @keyframes task-check-pop {
+    0% {
+      transform: scale(1);
+    }
+    35% {
+      transform: scale(0.82);
+    }
+    70% {
+      transform: scale(1.1);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  @keyframes task-check-draw {
+    from {
+      stroke-dashoffset: 14;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
   .task-main {
     display: flex;
     flex: 1;
@@ -1115,9 +1304,41 @@
     overflow-wrap: anywhere;
     cursor: text;
   }
+  .task-title-text {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-size: 0% 1.5px;
+    background-position: 0 58%;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
   .task.is-done .task-title {
     color: var(--color-ink-muted);
-    text-decoration: line-through;
+  }
+  .task.is-done .task-title-text {
+    background-size: 100% 1.5px;
+  }
+  .task.is-just-done .task-title-text {
+    animation: task-strike 380ms 80ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .task.is-just-undone .task-title-text {
+    animation: task-unstrike 240ms ease both;
+  }
+  @keyframes task-strike {
+    from {
+      background-size: 0% 1.5px;
+    }
+    to {
+      background-size: 100% 1.5px;
+    }
+  }
+  @keyframes task-unstrike {
+    from {
+      background-size: 100% 1.5px;
+    }
+    to {
+      background-size: 0% 1.5px;
+    }
   }
   .task-time {
     display: inline-flex;
@@ -1170,6 +1391,30 @@
   }
   .task-delete:hover {
     color: var(--color-danger);
+  }
+  .task-duplicate {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--color-ink-faint);
+    opacity: 0;
+    transition: opacity 120ms ease, color 120ms ease;
+  }
+  .task-duplicate svg {
+    width: 14px;
+    height: 14px;
+  }
+  .task:hover .task-duplicate,
+  .task:focus-within .task-duplicate {
+    opacity: 1;
+  }
+  .task-duplicate:hover {
+    color: var(--color-ink);
   }
   /* Edição inline: o script troca o botão por um campo com esta cara. */
   .task-editor {
@@ -1376,11 +1621,928 @@
       padding: 22px 20px 18px;
     }
     .task-time.is-empty,
-    .task-delete {
+    .task-delete,
+    .task-duplicate {
       opacity: 1;
     }
     .task-add-time {
       width: 64px;
+    }
+  }
+}
+
+/* Páginas públicas (landing e perguntas frequentes). Classes isoladas para
+   não mexer na geometria do planejador. Funcionam sem JavaScript: tema por
+   formulário, idioma por URL, passos por rádio, FAQ em <details>. Com o
+   script, o tema ganha a varredura e os passos avançam sozinhos. */
+@layer components {
+  .landing-width {
+    width: min(1200px, 100%);
+    margin-inline: auto;
+    padding-inline: max(24px, env(safe-area-inset-left), env(safe-area-inset-right));
+    box-sizing: border-box;
+  }
+  .landing-skip {
+    position: absolute;
+    top: 8px;
+    left: 24px;
+    z-index: 80;
+    padding: 12px 18px;
+    border-radius: 8px;
+    background: var(--color-ink);
+    color: var(--color-bg);
+    transform: translateY(-180%);
+  }
+  .landing-skip:focus-visible {
+    transform: translateY(0);
+  }
+
+  /* ---- Barra: logo e tema à esquerda; idioma, atalho e abrir à direita. */
+  .landing-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    height: 72px;
+    user-select: none;
+  }
+  .landing-side {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .landing-nav {
+    gap: 12px;
+  }
+  .landing-header .logo-mark {
+    height: 26px;
+  }
+  .lang-button {
+    flex: none;
+    gap: 6px;
+    padding: 0 8px 0 12px;
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+  .lang-button svg {
+    width: 14px;
+    height: 14px;
+    color: var(--color-ink-muted);
+  }
+
+  /* ---- Tipos ------------------------------------------------------- */
+  .landing-main h1,
+  .landing-main h2,
+  .landing-main h3 {
+    margin: 0;
+    color: var(--color-display);
+    font-family: var(--font-display);
+    font-weight: 800;
+    text-wrap: balance;
+    scroll-margin-top: 24px;
+  }
+  .landing-main p {
+    margin: 0;
+  }
+
+  /* ---- Abertura: a promessa, o botão e a mascote ao lado. ----------- */
+  .landing-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    align-items: center;
+    gap: clamp(24px, 4vw, 64px);
+    padding-top: clamp(40px, 6vw, 88px);
+  }
+  .hero-copy {
+    max-width: 640px;
+  }
+  .landing-hero h1 {
+    font-size: clamp(38px, 4.6vw, 64px);
+    line-height: 1.06;
+    letter-spacing: -0.04em;
+  }
+  .landing-lead {
+    max-width: 560px;
+    margin-top: 22px;
+    color: var(--color-ink-muted);
+    font-size: clamp(17px, 1.6vw, 20px);
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+  .landing-start {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 32px;
+  }
+  /* O botão principal é o único na cor da marca: um por tela. No hover ele
+     treme na horizontal, em ciclos curtos com pausa, como um toque de
+     atenção (referência: "Shake" do CSS-Tricks, sem rotação). Com "reduzir
+     movimento", só a sombra sobe. */
+  .landing-cta {
+    height: 52px;
+    padding: 0 26px;
+    border-color: var(--color-brand);
+    background: var(--color-brand);
+    color: var(--color-brand-contrast);
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 10px 28px -12px color-mix(in oklab, var(--color-brand) 85%, transparent);
+    transition: box-shadow 200ms ease, filter 200ms ease;
+  }
+  .landing-cta:hover {
+    border-color: var(--color-brand);
+    background: var(--color-brand);
+    filter: brightness(1.08);
+    box-shadow: 0 16px 36px -12px color-mix(in oklab, var(--color-brand) 90%, transparent);
+    animation: cta-shake 1.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
+  }
+  .landing-cta:active {
+    filter: brightness(0.96);
+    animation: none;
+  }
+  @keyframes cta-shake {
+    0%,
+    58%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    6%,
+    52% {
+      transform: translate3d(-1px, 0, 0);
+    }
+    12%,
+    46% {
+      transform: translate3d(2px, 0, 0);
+    }
+    17%,
+    29%,
+    41% {
+      transform: translate3d(-3px, 0, 0);
+    }
+    23%,
+    35% {
+      transform: translate3d(3px, 0, 0);
+    }
+  }
+  .landing-start p {
+    color: var(--color-ink-faint);
+    font-size: 13.5px;
+  }
+  .hero-art {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-width: 0;
+  }
+  .hero-art::before {
+    content: "";
+    position: absolute;
+    inset: 6% 4%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in oklab, var(--color-brand) 20%, transparent), transparent);
+  }
+  .hero-art .mascot {
+    position: relative;
+    width: min(100%, 340px);
+    height: auto;
+    color: var(--color-brand);
+  }
+
+  /* ---- Seções ------------------------------------------------------ */
+  .landing-section {
+    margin-top: clamp(80px, 10vw, 128px);
+    scroll-margin-top: 24px;
+  }
+  .landing-section-intro {
+    max-width: 640px;
+  }
+  .landing-section h2 {
+    font-size: clamp(28px, 3.2vw, 40px);
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+  }
+  .landing-section-intro p {
+    margin-top: 12px;
+    color: var(--color-ink-muted);
+    font-size: 16.5px;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+  .landing-main h3 {
+    font-size: 18px;
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+  }
+  .landing-features li p {
+    margin-top: 8px;
+    color: var(--color-ink-muted);
+    font-size: 15px;
+    line-height: 1.65;
+    text-wrap: pretty;
+  }
+
+  .landing-last {
+    padding-bottom: clamp(80px, 10vw, 128px);
+  }
+
+  /* ---- Como funciona: três passos e uma cena só ----------------------
+     Os passos são rádios: o marcado abre o texto e move a cena, tudo em
+     CSS (:has). O trilho à esquerda liga os passos. Com o script, a
+     posição do bloco na tela, enquanto a página rola normalmente, marca o
+     passo e enche o trilho (--how-progress); a seção não prende a rolagem
+     nem reserva espaço. Sem script, os passos são clicáveis. */
+  .how {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(32px, 5vw, 72px);
+    align-items: center;
+    margin-top: 40px;
+  }
+  .how-steps {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .how-step {
+    position: relative;
+    padding-left: 46px;
+  }
+  .how-radio {
+    position: absolute;
+    top: 20px;
+    left: 8px;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .how-label {
+    display: block;
+    padding: 14px 0 6px;
+    user-select: none;
+    touch-action: manipulation;
+  }
+  .how-marker {
+    position: absolute;
+    top: 13px;
+    left: 0;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 1.5px solid var(--color-border-strong);
+    border-radius: 50%;
+    background: var(--color-bg);
+    color: var(--color-ink-muted);
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 12.5px;
+    line-height: 1;
+    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+  }
+  .how-radio:focus-visible + .how-label .how-marker {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 3px;
+  }
+  .how-title {
+    display: block;
+    color: var(--color-ink-muted);
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 19px;
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+    transition: color 200ms ease;
+  }
+  .how-label:hover .how-title {
+    color: var(--color-ink);
+  }
+  .how-body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .how-body > div {
+    min-height: 0;
+    overflow: hidden;
+  }
+  .how-body p {
+    max-width: 44ch;
+    padding-bottom: 18px;
+    color: var(--color-ink-muted);
+    font-size: 15px;
+    line-height: 1.65;
+    text-wrap: pretty;
+  }
+  .how-rail {
+    position: absolute;
+    top: 45px;
+    bottom: -9px;
+    left: 13px;
+    width: 2px;
+    overflow: hidden;
+    border-radius: 1px;
+    background: var(--color-border);
+  }
+  .how-rail-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--color-brand);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 120ms linear;
+  }
+  .how-step:has(.how-radio:checked) .how-rail-fill {
+    transform: scaleY(var(--how-progress, 0));
+  }
+  .how-step:has(.how-radio:checked) .how-marker {
+    border-color: var(--color-brand);
+    background: var(--color-brand);
+    color: var(--color-brand-contrast);
+  }
+  .how-step:has(.how-radio:checked) .how-title {
+    color: var(--color-display);
+  }
+  .how-step:has(.how-radio:checked) .how-body {
+    grid-template-rows: 1fr;
+  }
+  /* Passos já feitos: trilho cheio, número na cor da marca. */
+  .how:has(#how-2:checked) .how-step:nth-of-type(1) .how-rail-fill,
+  .how:has(#how-3:checked) .how-step:nth-of-type(1) .how-rail-fill,
+  .how:has(#how-3:checked) .how-step:nth-of-type(2) .how-rail-fill {
+    transform: scaleY(1);
+  }
+  .how:has(#how-2:checked) .how-step:nth-of-type(1) .how-marker,
+  .how:has(#how-3:checked) .how-step:nth-of-type(1) .how-marker,
+  .how:has(#how-3:checked) .how-step:nth-of-type(2) .how-marker {
+    border-color: var(--color-brand);
+    color: var(--color-brand);
+  }
+  /* A cena: a forma do quadro, sem texto de tarefa. Tudo que muda entre
+     os passos é transição de CSS sobre o SVG. */
+  .how-stage {
+    min-width: 0;
+    margin: 0;
+  }
+  .how-scene {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+  .how-field {
+    fill: var(--color-surface-2);
+    stroke: var(--color-border-strong);
+    stroke-width: 1.5;
+    transition: opacity 400ms ease;
+  }
+  .how-name {
+    width: 128px;
+    fill: var(--color-ink);
+  }
+  .how-caret {
+    fill: var(--color-brand);
+    transform: translateX(132px);
+    transition: opacity 200ms ease;
+  }
+  .how-day {
+    fill: var(--color-ink-muted);
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 14px;
+    text-anchor: middle;
+  }
+  .how-col {
+    fill: var(--color-surface);
+    stroke: var(--color-border);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+    opacity: 0.55;
+    transition: opacity 500ms ease;
+  }
+  .how-bar {
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 400ms ease calc(var(--n) * 55ms), transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--n) * 55ms);
+  }
+  .how-bar circle {
+    fill: none;
+    stroke: var(--color-border-strong);
+    stroke-width: 1.4;
+    transition: fill 250ms ease, stroke 250ms ease;
+  }
+  .how-bar rect {
+    fill: var(--color-ink-muted);
+    transition: fill 250ms ease, opacity 250ms ease;
+  }
+  .how-chip {
+    stroke: var(--color-brand);
+    stroke-width: 1.2;
+  }
+  .how-bar .how-chip {
+    fill: var(--color-bg);
+  }
+  .how-tick {
+    stroke: var(--color-brand-contrast);
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 8;
+    stroke-dashoffset: 8;
+    transition: stroke-dashoffset 260ms cubic-bezier(0.2, 0.8, 0.2, 1) 250ms;
+  }
+  .how-strike {
+    stroke: var(--color-ink);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-dasharray: 20;
+    stroke-dashoffset: 20;
+    transition: stroke-dashoffset 380ms cubic-bezier(0.2, 0.8, 0.2, 1) 300ms;
+  }
+  .n1 { --n: 0; }
+  .n2 { --n: 1; }
+  .n3 { --n: 2; }
+  .n4 { --n: 3; }
+  .n5 { --n: 4; }
+  .n6 { --n: 5; }
+  .n7 { --n: 6; }
+  .n8 { --n: 7; }
+  .n9 { --n: 8; }
+  .n10 { --n: 9; }
+  .n11 { --n: 10; }
+  .n12 { --n: 11; }
+
+  /* Passo 1: o nome é digitado (a animação recomeça a cada entrada). */
+  .how:has(#how-1:checked) .how-name {
+    animation: how-type 900ms 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .how:has(#how-1:checked) .how-caret {
+    animation: how-caret 900ms 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both, how-blink 1s 1.1s steps(2, start) infinite;
+  }
+  @keyframes how-type {
+    from {
+      width: 0;
+    }
+    to {
+      width: 128px;
+    }
+  }
+  @keyframes how-caret {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(132px);
+    }
+  }
+  @keyframes how-blink {
+    to {
+      visibility: hidden;
+    }
+  }
+  /* Passos 2 e 3: o campo vira título, os dias ganham corpo, as tarefas entram. */
+  .how:has(#how-2:checked) .how-field,
+  .how:has(#how-3:checked) .how-field,
+  .how:has(#how-2:checked) .how-caret,
+  .how:has(#how-3:checked) .how-caret {
+    opacity: 0;
+  }
+  .how:has(#how-2:checked) .how-col,
+  .how:has(#how-3:checked) .how-col {
+    stroke-dasharray: none;
+    opacity: 1;
+  }
+  .how:has(#how-2:checked) .how-bar,
+  .how:has(#how-3:checked) .how-bar {
+    opacity: 1;
+    transform: none;
+  }
+  /* Passo 3: uma tarefa feita, outra muda de dia. */
+  .how:has(#how-3:checked) .is-check circle {
+    fill: var(--color-brand);
+    stroke: var(--color-brand);
+  }
+  .how:has(#how-3:checked) .is-check .how-tick,
+  .how:has(#how-3:checked) .is-check .how-strike {
+    stroke-dashoffset: 0;
+  }
+  .how:has(#how-3:checked) .is-check rect {
+    opacity: 0.45;
+  }
+  .how:has(#how-3:checked) .is-move {
+    transform: translate(144px, 48px);
+    transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 500ms;
+  }
+  .how:has(#how-3:checked) .is-move rect {
+    fill: var(--color-brand);
+  }
+  .how:has(#how-3:checked) .is-shift {
+    transform: translateY(-24px);
+    transition: transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1) 900ms;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .how-caret,
+    .landing-cta:hover {
+      animation: none;
+    }
+    .landing-questions details::details-content {
+      transition: none;
+    }
+  }
+
+  /* ---- Aplicativos: faixa de largura total na tonalidade da marca ---- */
+  .landing-apps {
+    margin-top: clamp(80px, 10vw, 128px);
+    padding-block: clamp(64px, 8vw, 104px);
+    background: var(--color-band);
+    text-align: center;
+  }
+  .apps-inner {
+    display: grid;
+    justify-items: center;
+    gap: 14px;
+  }
+  .landing-apps h2 {
+    color: var(--color-brand);
+    font-size: clamp(30px, 3.6vw, 44px);
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+  }
+  .landing-apps p {
+    max-width: 46ch;
+    color: var(--color-ink-muted);
+    font-size: 17px;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+  .store-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 18px;
+  }
+  /* Selo de loja em estilo cartoon: borda grossa, sombra sólida embaixo, e
+     afunda ao clicar. Monocromático: ícone e texto em cinza. */
+  .store-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 22px 12px 18px;
+    border: 2px solid var(--color-border-strong);
+    border-radius: 16px;
+    background: var(--color-surface);
+    color: var(--color-ink-muted);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+    box-shadow: 0 4px 0 var(--color-border-strong);
+    transition: transform 120ms ease, box-shadow 120ms ease, color 120ms ease;
+    user-select: none;
+  }
+  .store-badge svg {
+    flex: none;
+    width: 24px;
+    height: 24px;
+  }
+  .store-badge small {
+    padding: 2px 7px 3px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 999px;
+    color: var(--color-ink-faint);
+    font-size: 10.5px;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+  a.store-badge:hover {
+    color: var(--color-ink);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 0 var(--color-border-strong);
+  }
+  a.store-badge:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 var(--color-border-strong);
+  }
+
+  /* Pontos fortes: cartões com ícone. */
+  .landing-features {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 40px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .landing-features li {
+    padding: 22px 22px 24px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+  }
+  .landing-features svg {
+    display: block;
+    width: 22px;
+    height: 22px;
+    margin-bottom: 18px;
+    color: var(--color-display);
+  }
+
+  /* ---- Perguntas frequentes: página própria, uma coluna. ------------ */
+  .faq {
+    max-width: 720px;
+    margin-inline: auto;
+    padding-top: clamp(40px, 6vw, 72px);
+    padding-bottom: clamp(80px, 10vw, 128px);
+  }
+  .faq-intro {
+    text-align: center;
+  }
+  .faq-intro h1 {
+    color: var(--color-brand);
+    font-size: clamp(34px, 4.5vw, 52px);
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+  }
+  .faq-intro p {
+    max-width: 52ch;
+    margin: 14px auto 0;
+    color: var(--color-ink-muted);
+    font-size: 17px;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+  .faq .landing-questions {
+    margin-top: 40px;
+  }
+  .faq-more {
+    margin-top: 56px;
+    padding: 28px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    text-align: center;
+  }
+  .faq-more h2 {
+    font-size: 22px;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+  .faq-more p {
+    max-width: 52ch;
+    margin: 8px auto 0;
+    color: var(--color-ink-muted);
+    font-size: 15.5px;
+    line-height: 1.6;
+  }
+  .faq-more .btn {
+    margin-top: 20px;
+  }
+  .landing-questions {
+    min-width: 0;
+  }
+  .landing-questions details {
+    border-bottom: 1px solid var(--color-border);
+    interpolate-size: allow-keywords;
+  }
+  /* A resposta desce suave: a caixa de conteúdo do <details> transiciona
+     de 0 para auto (interpolate-size) e o content-visibility acompanha
+     (allow-discrete), o que anima também o fechar. Navegador sem suporte
+     abre na hora. */
+  .landing-questions details::details-content {
+    display: block;
+    block-size: 0;
+    overflow: clip;
+    opacity: 0;
+    translate: 0 -6px;
+    transition: block-size 340ms cubic-bezier(0.2, 0.8, 0.2, 1), content-visibility 340ms allow-discrete, opacity 260ms ease, translate 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .landing-questions details[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+    translate: 0 0;
+  }
+  .landing-questions details:first-child {
+    border-top: 1px solid var(--color-border);
+  }
+  .landing-questions summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 4px;
+    color: var(--color-ink);
+    font-size: 16.5px;
+    font-weight: 600;
+    list-style: none;
+    touch-action: manipulation;
+    transition: color 120ms ease;
+  }
+  .landing-questions summary::-webkit-details-marker {
+    display: none;
+  }
+  .landing-questions summary::after {
+    content: "";
+    flex: none;
+    width: 8px;
+    height: 8px;
+    margin-right: 4px;
+    border-right: 1.6px solid var(--color-ink-muted);
+    border-bottom: 1.6px solid var(--color-ink-muted);
+    transform: rotate(45deg);
+    transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .landing-questions details[open] summary::after {
+    transform: rotate(225deg) translate(-2px, -2px);
+  }
+  .landing-questions summary:hover {
+    color: var(--color-display);
+  }
+  .landing-questions p {
+    max-width: 62ch;
+    padding: 0 4px 22px;
+    color: var(--color-ink-muted);
+    font-size: 15.5px;
+    line-height: 1.65;
+    text-wrap: pretty;
+  }
+
+  /* ---- Rodapé ------------------------------------------------------ */
+  .landing-footer {
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+    user-select: none;
+  }
+  .footer-inner {
+    display: grid;
+    grid-template-columns: minmax(200px, 1fr) 3fr;
+    gap: 40px 56px;
+    padding-top: 56px;
+    padding-bottom: max(32px, env(safe-area-inset-bottom));
+  }
+  .footer-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    color: var(--color-ink-muted);
+    font-size: 14px;
+  }
+  .footer-brand .logo-mark {
+    height: 22px;
+  }
+  .footer-brand p {
+    margin: 0;
+  }
+  .footer-groups {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 36px 24px;
+  }
+  .footer-group h2 {
+    margin: 0 0 12px;
+    color: var(--color-ink);
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+  .footer-group ul {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 14px;
+  }
+  .footer-group a {
+    color: var(--color-ink-muted);
+    text-decoration: none;
+    text-underline-offset: 4px;
+    transition: color 120ms ease;
+  }
+  .footer-group a:hover {
+    color: var(--color-ink);
+    text-decoration: underline;
+  }
+  .footer-soon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-ink-faint);
+    white-space: nowrap;
+  }
+  .footer-soon small {
+    padding: 1px 6px 2px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    font-size: 10.5px;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+  .footer-bottom {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
+    color: var(--color-ink-faint);
+    font-size: 13px;
+  }
+  .footer-bottom p {
+    margin: 0;
+  }
+  .landing-languages {
+    display: flex;
+    gap: 20px;
+  }
+  .landing-languages a {
+    color: var(--color-ink-muted);
+    text-decoration: none;
+    text-underline-offset: 4px;
+  }
+  .landing-languages a:hover,
+  .landing-languages a[aria-current="page"] {
+    color: var(--color-ink);
+    text-decoration: underline;
+  }
+
+  @media (max-width: 1023px) {
+    .landing-features {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .hero-art .mascot {
+      width: min(100%, 260px);
+    }
+    .how {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+    .how-stage {
+      order: -1;
+    }
+    .how-day {
+      font-size: 16px;
+    }
+    .footer-inner {
+      grid-template-columns: 1fr;
+      gap: 36px;
+    }
+  }
+  @media (max-width: 639px) {
+    .landing-width {
+      padding-inline: max(20px, env(safe-area-inset-left), env(safe-area-inset-right));
+    }
+    .landing-header {
+      height: 60px;
+      gap: 8px;
+    }
+    .landing-nav {
+      gap: 8px;
+    }
+    .landing-header .logo-mark {
+      height: 22px;
+    }
+    .landing-hero {
+      grid-template-columns: 1fr;
+      gap: 24px;
+      padding-top: 28px;
+    }
+    .landing-hero h1 {
+      font-size: clamp(34px, 9.5vw, 48px);
+    }
+    .hero-art {
+      order: -1;
+      justify-items: start;
+    }
+    .hero-art::before {
+      display: none;
+    }
+    .hero-art .mascot {
+      width: 112px;
+    }
+    .landing-features {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .how-day {
+      font-size: 19px;
+    }
+    .faq-more {
+      padding: 22px;
+    }
+    .footer-groups {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 28px 20px;
     }
   }
 }

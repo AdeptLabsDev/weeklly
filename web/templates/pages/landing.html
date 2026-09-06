@@ -1,0 +1,129 @@
+{{define "content"}}
+{{template "public-header" .}}
+<main id="main" class="landing-main" tabindex="-1">
+  <section class="landing-hero landing-width" aria-labelledby="landing-title">
+    <div class="hero-copy">
+      <h1 id="landing-title">{{.L.T "landing.heading"}}</h1>
+      <p class="landing-lead">{{.L.T "landing.lead"}}</p>
+      <div class="landing-start">
+        <a class="btn btn-primary landing-cta" href="/semanas/nova?lang={{.L.Lang}}">{{.L.T "landing.create"}}</a>
+        <p>{{.L.T "landing.startNote"}}</p>
+      </div>
+    </div>
+    {{/* A mascote equilibra a abertura. Hoje é a silhueta da marca; quando o
+         cartoon existir (design/brand/MASCOTE.md), entra aqui como <img> do
+         asset, com alt vazio: o sentido está no texto ao lado. */}}
+    <div class="hero-art">{{template "mascot"}}</div>
+  </section>
+
+  {{/* Como funciona: três passos e uma cena só. Os passos são um grupo de
+       rádios (teclado e leitor de tela nativos); a cena reage ao passo
+       marcado só com CSS (:has). Com o script, a posição do bloco na tela,
+       enquanto a página rola, escolhe o passo: a seção não prende a rolagem. */}}
+  <section class="landing-section landing-how landing-width" id="how-it-works" aria-labelledby="steps-heading">
+    <div class="landing-section-intro">
+      <h2 id="steps-heading">{{.L.T "landing.steps.heading"}}</h2>
+      <p>{{.L.T "landing.steps.lead"}}</p>
+    </div>
+    <div class="how">
+      <fieldset class="how-steps">
+        <legend class="sr-only">{{.L.T "landing.steps.legend"}}</legend>
+        <div class="how-step">
+          <input type="radio" name="how-step" id="how-1" class="how-radio" checked>
+          <label for="how-1" class="how-label"><span class="how-marker" aria-hidden="true">1</span><span class="how-title">{{.L.T "landing.steps.create.title"}}</span></label>
+          <div class="how-body"><div><p>{{.L.T "landing.steps.create.body"}}</p></div></div>
+          <span class="how-rail" aria-hidden="true"><span class="how-rail-fill"></span></span>
+        </div>
+        <div class="how-step">
+          <input type="radio" name="how-step" id="how-2" class="how-radio">
+          <label for="how-2" class="how-label"><span class="how-marker" aria-hidden="true">2</span><span class="how-title">{{.L.T "landing.steps.plan.title"}}</span></label>
+          <div class="how-body"><div><p>{{.L.T "landing.steps.plan.body"}}</p></div></div>
+          <span class="how-rail" aria-hidden="true"><span class="how-rail-fill"></span></span>
+        </div>
+        <div class="how-step">
+          <input type="radio" name="how-step" id="how-3" class="how-radio">
+          <label for="how-3" class="how-label"><span class="how-marker" aria-hidden="true">3</span><span class="how-title">{{.L.T "landing.steps.adjust.title"}}</span></label>
+          <div class="how-body"><div><p>{{.L.T "landing.steps.adjust.body"}}</p></div></div>
+        </div>
+      </fieldset>
+      <figure class="how-stage" aria-hidden="true">
+        <svg class="how-scene" viewBox="0 0 560 278" fill="none">
+          {{/* O nome da semana: um campo sendo digitado, que vira título. */}}
+          <rect class="how-field" x="20" y="24" width="208" height="36" rx="10"/>
+          <rect class="how-name" x="32" y="37" width="0" height="10" rx="5"/>
+          <rect class="how-caret" x="32" y="33" width="1.5" height="18" rx="0.75"/>
+          {{/* Sete dias iguais. */}}
+          {{range .SEO.Days}}
+          <text class="how-day" x="{{.Label}}" y="92">{{.Name}}</text>
+          <rect class="how-col" x="{{.X}}" y="104" width="64" height="150" rx="12"/>
+          {{end}}
+          {{/* Tarefas como barras, sem texto: a forma do produto, não uma cópia dele. */}}
+          <g class="how-bar n1"><circle cx="45" cy="124" r="5"/><rect x="55" y="119.5" width="30" height="9" rx="4.5"/></g>
+          <g class="how-bar n2"><circle cx="45" cy="148" r="5"/><rect x="55" y="143.5" width="22" height="9" rx="4.5"/></g>
+          <g class="how-bar n3"><circle cx="117" cy="124" r="5"/><rect x="127" y="119.5" width="26" height="9" rx="4.5"/><rect class="how-chip" x="127" y="132.5" width="24" height="10" rx="3"/></g>
+          <g class="how-bar n4"><circle cx="189" cy="124" r="5"/><rect x="199" y="119.5" width="32" height="9" rx="4.5"/></g>
+          <g class="how-bar n5 is-check"><circle cx="189" cy="148" r="5"/><path class="how-tick" d="M186.8 148.1l1.6 1.6 2.9-3.2"/><rect x="199" y="143.5" width="20" height="9" rx="4.5"/><line class="how-strike" x1="200" y1="148" x2="218" y2="148"/></g>
+          <g class="how-bar n6"><circle cx="189" cy="172" r="5"/><rect x="199" y="167.5" width="28" height="9" rx="4.5"/></g>
+          <g class="how-bar n7 is-move"><circle cx="261" cy="124" r="5"/><rect x="271" y="119.5" width="24" height="9" rx="4.5"/></g>
+          <g class="how-bar n8 is-shift"><circle cx="261" cy="148" r="5"/><rect x="271" y="143.5" width="30" height="9" rx="4.5"/></g>
+          <g class="how-bar n9"><circle cx="333" cy="124" r="5"/><rect x="343" y="119.5" width="28" height="9" rx="4.5"/></g>
+          <g class="how-bar n10"><circle cx="405" cy="124" r="5"/><rect x="415" y="119.5" width="20" height="9" rx="4.5"/></g>
+          <g class="how-bar n11"><circle cx="405" cy="148" r="5"/><rect x="415" y="143.5" width="26" height="9" rx="4.5"/></g>
+          <g class="how-bar n12"><circle cx="477" cy="124" r="5"/><rect x="487" y="119.5" width="22" height="9" rx="4.5"/></g>
+        </svg>
+      </figure>
+    </div>
+  </section>
+
+  {{/* Aplicativos: uma faixa de largura total na tonalidade da marca, como
+       outra área do produto. O selo do Google Play só vira link quando a
+       URL existir; até lá, fica marcado "em breve". */}}
+  <section class="landing-apps" id="apps" aria-labelledby="apps-heading">
+    <div class="landing-width apps-inner">
+      <h2 id="apps-heading">{{.L.T "landing.apps.heading"}}</h2>
+      <p>{{.L.T "landing.apps.lead"}}</p>
+      <div class="store-badges">
+        {{if .SEO.PlayStore}}<a class="store-badge" href="{{.SEO.PlayStore}}" rel="noopener">{{else}}<span class="store-badge is-soon">{{end}}
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.609 1.814 13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893 2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198 2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658 16.802 8.99l-2.303 2.303-8.635-8.635z"/></svg>
+          <span class="store-badge-text">{{.L.T "landing.apps.play"}}</span>
+          {{if not .SEO.PlayStore}}<small>{{.L.T "footer.soon"}}</small>{{end}}
+        {{if .SEO.PlayStore}}</a>{{else}}</span>{{end}}
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-section landing-last landing-width" id="features" aria-labelledby="features-heading">
+    <div class="landing-section-intro">
+      <h2 id="features-heading">{{.L.T "landing.features.heading"}}</h2>
+      <p>{{.L.T "landing.features.lead"}}</p>
+    </div>
+    <ul class="landing-features">
+      <li>
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="4" height="12" rx="1.2"/><rect x="8" y="4" width="4" height="12" rx="1.2"/><rect x="13.5" y="4" width="4" height="12" rx="1.2"/></svg>
+        <h3>{{.L.T "landing.features.days.title"}}</h3><p>{{.L.T "landing.features.days.body"}}</p>
+      </li>
+      <li>
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h12M4 10h12M4 14.5h7"/><path d="m14 13.5 1.5 1.5 3-3"/></svg>
+        <h3>{{.L.T "landing.features.free.title"}}</h3><p>{{.L.T "landing.features.free.body"}}</p>
+      </li>
+      <li>
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="3"/><path d="M3 8h14"/><path d="m8 12.5 1.5 1.5 3-3"/></svg>
+        <h3>{{.L.T "landing.features.noDates.title"}}</h3><p>{{.L.T "landing.features.noDates.body"}}</p>
+      </li>
+      <li>
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 1.5"/></svg>
+        <h3>{{.L.T "landing.features.time.title"}}</h3><p>{{.L.T "landing.features.time.body"}}</p>
+      </li>
+      <li>
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v12M13 4v12"/><path d="m4 7 3-3 3 3M10 13l3 3 3-3"/></svg>
+        <h3>{{.L.T "landing.features.drag.title"}}</h3><p>{{.L.T "landing.features.drag.body"}}</p>
+      </li>
+      <li>
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="11" height="11" rx="2"/><path d="M4 13V5a1 1 0 0 1 1-1h8"/></svg>
+        <h3>{{.L.T "landing.features.reuse.title"}}</h3><p>{{.L.T "landing.features.reuse.body"}}</p>
+      </li>
+    </ul>
+  </section>
+</main>
+{{template "public-footer" .}}
+{{end}}

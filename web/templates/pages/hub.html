@@ -15,6 +15,7 @@
     <p class="page-lead">{{.L.T "hub.emptyLead"}}</p>
     <p class="empty-body">{{.L.T "hub.emptyBody"}}</p>
     <a class="btn btn-primary" href="/semanas/nova" data-open-dialog="new-week">{{.L.T "hub.createFirst"}}</a>
+    <p class="empty-body"><a href="{{if eq .L.Lang "en"}}/en/weekly-planner{{else}}/planejador-semanal{{end}}">{{.L.T "hub.about"}}</a></p>
   </div>
   {{end}}
 </main>

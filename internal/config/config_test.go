@@ -28,6 +28,9 @@ func TestLoadDefaultsAreProductionSafe(t *testing.T) {
 	if cfg.IsDev() {
 		t.Error("IsDev() = true por padrão")
 	}
+	if cfg.SearchIndexing {
+		t.Error("indexação deve estar desligada por padrão")
+	}
 }
 
 func TestLoadReadsEveryVariable(t *testing.T) {
@@ -77,6 +80,14 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 		"fuso inexistente":             {"WEEKLLY_TIMEZONE": "Marte/Olympus"},
 		"base url com caminho":         {"WEEKLLY_BASE_URL": "https://weeklly.app/app"},
 		"base url sem esquema":         {"WEEKLLY_BASE_URL": "weeklly.app"},
+		"base url com credenciais":     {"WEEKLLY_BASE_URL": "https://user:secret@weeklly.app"},
+		"base url com query vazia":     {"WEEKLLY_BASE_URL": "https://weeklly.app?"},
+		"base url com fragmento vazio": {"WEEKLLY_BASE_URL": "https://weeklly.app#"},
+		"base url sem hostname":        {"WEEKLLY_BASE_URL": "https://:443"},
+		"indexação inválida":           {"WEEKLLY_SEARCH_INDEXING": "yes"},
+		"indexação sem origem":         {"WEEKLLY_SEARCH_INDEXING": "true"},
+		"indexação sem https":          {"WEEKLLY_SEARCH_INDEXING": "true", "WEEKLLY_BASE_URL": "http://weeklly.app"},
+		"indexação em desenvolvimento": {"WEEKLLY_SEARCH_INDEXING": "true", "WEEKLLY_ENV": "development", "WEEKLLY_BASE_URL": "https://weeklly.app"},
 		"credencial do google sozinha": {"WEEKLLY_GOOGLE_CLIENT_ID": "id"},
 		"google em produção sem https": {"WEEKLLY_GOOGLE_CLIENT_ID": "id", "WEEKLLY_GOOGLE_CLIENT_SECRET": "s", "WEEKLLY_BASE_URL": "http://weeklly.app"},
 	}
@@ -90,5 +101,18 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 				t.Errorf("erro %q não cita a variável", err)
 			}
 		})
+	}
+}
+
+func TestSearchIndexingRequiresExplicitProductionConfig(t *testing.T) {
+	cfg, err := Load(env(map[string]string{
+		"WEEKLLY_ENV": "production", "WEEKLLY_BASE_URL": "https://weeklly.example/",
+		"WEEKLLY_SEARCH_INDEXING": "true",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.SearchIndexing || cfg.BaseURL != "https://weeklly.example" {
+		t.Errorf("configuração pública não foi aplicada: %+v", cfg)
 	}
 }

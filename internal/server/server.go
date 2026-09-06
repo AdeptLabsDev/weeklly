@@ -64,6 +64,9 @@ func New(opts Options) (*Server, error) {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", s.handleHome)
+	s.registerPublic(mux)
+	mux.HandleFunc("GET /robots.txt", s.handleRobots)
+	mux.HandleFunc("GET /sitemap.xml", s.handleSitemap)
 	mux.HandleFunc("GET /semanas", s.handleHub)
 	mux.HandleFunc("GET /semanas/nova", s.handleNewWeekPage)
 	mux.HandleFunc("POST /semanas", s.handleCreateWeek)
@@ -78,6 +81,7 @@ func New(opts Options) (*Server, error) {
 	mux.HandleFunc("POST /tarefas/{id}/editar", s.handleEditTask)
 	mux.HandleFunc("POST /tarefas/{id}/concluir", s.handleDoneTask)
 	mux.HandleFunc("POST /tarefas/{id}/mover", s.handleMoveTask)
+	mux.HandleFunc("POST /tarefas/{id}/duplicar", s.handleDuplicateTask)
 	mux.HandleFunc("POST /tarefas/{id}/excluir", s.handleDeleteTask)
 	mux.HandleFunc("POST /tema", s.handleTheme)
 	mux.HandleFunc("POST /idioma", s.handleLanguage)
@@ -97,6 +101,7 @@ func New(opts Options) (*Server, error) {
 	var h http.Handler = mux
 	h = s.withSession(h)
 	h = http.NewCrossOriginProtection().Handler(h)
+	h = s.searchHeaders(h)
 	h = securityHeaders(opts.Config)(h)
 	h = logging(opts.Logger)(h)
 	h = recoverer(opts.Logger)(h)

@@ -9,6 +9,7 @@ Só tópicos. `[x]` feito, `[ ]` não feito. Detalhes em [ROADMAP.md](ROADMAP.md
 - [x] Decisão: contas multiusuário
 - [x] Definição da stack: Go, Tailwind v4, JS nativo, SQLite
 - [x] Backlog
+- [x] Guia visual em design, prompt reutilizável e imagem social explicando a weeklly
 
 ## Fase 0 — Fundação
 
@@ -37,11 +38,11 @@ Só tópicos. `[x]` feito, `[ ]` não feito. Detalhes em [ROADMAP.md](ROADMAP.md
 - [x] Idioma: português e inglês, catálogo com teste
 - [x] Desfazer e refazer nas ações de tarefa (botões e atalhos)
 - [x] Idioma em painel próprio ao lado do menu (pronto para mais idiomas)
-- [x] Cursor próprio: seta e clique, sem piscar ao navegar
+- [x] Cursor próprio: seta e clique, opcional em "Tipo de mouse"
+- [x] Cor de destaque à escolha da pessoa (cursor e textos principais acompanham)
 - [ ] Outras configurações no menu
-- [ ] Decisão: cor do cursor
 - [x] Nunito nos papéis de exibição, fonte do sistema no resto
-- [ ] Decisão: cor de destaque
+- [x] Decisão: cor de destaque (cada pessoa escolhe a sua; sem cor por padrão)
 - [ ] Primeiro push com CI verde
 - [ ] Aprovação visual da tela
 
@@ -56,6 +57,8 @@ Só tópicos. `[x]` feito, `[ ]` não feito. Detalhes em [ROADMAP.md](ROADMAP.md
 - [x] Mover tarefa para outro dia arrastando
 - [x] Clicar no espaço vazio do dia começa uma tarefa
 - [x] Campo de horário em texto com seletor leve
+- [x] Concluir tarefa com animação (check e linha da esquerda para a direita)
+- [x] Duplicar tarefa (ícone à direita do x, com desfazer)
 - [ ] Ordenar tarefas do dia por horário (opção)
 - [ ] Limpar tarefas concluídas do dia
 - [ ] Reordenar por toque longo fora da alça
@@ -109,6 +112,31 @@ Só tópicos. `[x]` feito, `[ ]` não feito. Detalhes em [ROADMAP.md](ROADMAP.md
 
 ## Fase 5 — Lançamento web
 
+- [x] SEO: apresentação pública PT-BR e inglês em URLs estáveis
+- [x] SEO: canonical, hreflang, metadados sociais, PNGs e dados estruturados
+- [x] SEO: robots, sitemap público e noindex nas rotas do aplicativo
+- [x] SEO: testes de idioma, indexação, isolamento e fluxo sem JavaScript
+- [x] SEO: skills pesquisadas e plano de conteúdo/medição em docs/SEO.md
+- [x] Landing revisada: barra com tema e idioma, headline concreta, passos, pontos fortes, FAQ por último, rodapé
+- [x] Landing: idioma como botão com o atual e painel com todos os idiomas
+- [x] Referência de landing: Duolingo seção a seção em docs/LANDING-REFERENCE.md
+- [x] Landing definitiva, parte 1: barra sem atalho, "como funciona" como cena interativa (rádios + CSS, avanço automático), FAQ em página própria (`/perguntas-frequentes`, `/en/faq`)
+- [x] Landing definitiva, parte 2: abertura em duas colunas (texto que convence, mascote à direita), botão principal na cor da marca com tremor no hover
+- [x] Como funciona avança pela rolagem (posição do bloco na tela, sem prender a página; trilho pela posição); tremor do botão no modelo CSS-Tricks; FAQ centralizada com resposta descendo suave e título na cor da marca
+- [x] Faixa dos aplicativos na landing (fundo na tonalidade da marca, selo do Google Play em cartoon, "em breve" até a URL existir)
+- [ ] Publicar o app e preencher `playStoreURL` em `seo.go`
+- [ ] Mascote em cartoon: gerar com os prompts de `design/brand/MASCOTE.md` e trocar a silhueta da abertura
+- [ ] Landing: um botão só na barra e seções restantes (decisão do Miguel pendente)
+- [x] Mascote: esquilo como ícone do site (SVG, PNG 32, iPhone 180)
+- [x] Cor principal da marca `#727cf5` (ícone e token `--color-brand`)
+- [x] Mascote na abertura da landing (silhueta; cartoon pendente)
+- [ ] Mascote no rodapé
+- [ ] Páginas do rodapé: Sobre a Adept Labs, Contato, Termos de uso, Política de privacidade
+- [ ] Redes sociais: perfis e links no rodapé
+- [ ] SEO: confirmar domínio e habilitar indexação na produção oficial
+- [ ] SEO: verificar Search Console/Bing e enviar sitemap após publicação
+- [ ] SEO: medir Core Web Vitals e registrar baseline de busca
+- [ ] SEO: primeiro guia original de semana reutilizável
 - [ ] Domínio e HTTPS
 - [ ] Cabeçalhos de segurança e rate limiting
 - [ ] PWA instalável

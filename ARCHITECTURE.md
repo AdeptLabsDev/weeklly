@@ -67,9 +67,9 @@ internal/server/            http.Handler: rotas, middlewares, sessão, login, te
 web/templates/              layout.html, partials/ (barra, logo, formulário, tarefa, cursor) e pages/*.html
 e2e/                        Playwright: testes ponta a ponta e capturas de tela (Node só aqui)
 web/styles/app.css          fonte do Tailwind: fontes, tokens (@theme), componentes
-web/static/                 fontes woff2 e favicon; app.css é gerado e fica fora do git
+web/static/                 fontes woff2, ícones do site (esquilo: favicon.svg, favicon-32.png, apple-touch-icon.png) e imagens sociais; app.css é gerado e fica fora do git
 tools/tailwind/             downloader do CLI do Tailwind com versão e checksum fixados
-docs/                       ROADMAP, DECISIONS, BACKLOG
+docs/                       ROADMAP, DECISIONS, BACKLOG, SEO, LANDING-REFERENCE
 ```
 
 Fronteiras: `week` não conhece HTTP nem banco. `store` não conhece HTTP. `server` usa os dois só pela API pública. `cmd` apenas monta as peças.
@@ -83,6 +83,8 @@ Rotas da Fase 0:
 | Rota | Faz |
 |---|---|
 | `GET /` | Abre onde a pessoa parou: redireciona para a última semana aberta (ou a mais recente); sem semanas, mostra o hub |
+| `GET /planejador-semanal`, `/en/weekly-planner` | Apresentação pública do produto em PT-BR e inglês, sem sessão; idioma fixado pela URL, tema pelo cookie (D23) |
+| `GET /robots.txt`, `/sitemap.xml` | Descoberta pública; sitemap só lista as duas traduções quando `WEEKLLY_SEARCH_INDEXING=true` |
 | `GET /semanas` | Hub: as semanas do usuário, as usadas mais recentemente primeiro |
 | `GET /semanas/nova` | Formulário de nova semana em página (o mesmo abre em diálogo com JavaScript) |
 | `POST /semanas` | Cria a semana; um visitante sem sessão ganha usuário anônimo e sessão aqui |
@@ -91,10 +93,11 @@ Rotas da Fase 0:
 | `POST /semana/{id}/duplicar` | Cria "Nome (cópia)" com as tarefas e abre a cópia |
 | `GET`/`POST /semana/{id}/excluir` | Confirmação (página sem script) e exclusão |
 | `POST /semana/{id}/tarefas` | Cria uma tarefa (`weekday`, `title`, `time`). Com `Accept: application/json` devolve a tarefa renderizada; sem, volta ao dia |
-| `POST /tarefas/{id}/editar`, `/concluir`, `/mover`, `/excluir` | Título e horário, feita ou não, posição e dia (`weekday`, `position`), apagar. Mesmo contrato JSON ou redirecionamento |
+| `POST /tarefas/{id}/editar`, `/concluir`, `/mover`, `/duplicar`, `/excluir` | Título e horário, feita ou não, posição e dia (`weekday`, `position`), cópia logo abaixo, apagar. Mesmo contrato JSON ou redirecionamento |
 | `POST /semanas/ordem` | Ordem da lista de semanas (`recent` ou `name`), guardada no usuário |
 | `POST /tema` | Tema (`dark` ou `light`) em cookie legível pelo script |
 | `POST /idioma` | Idioma (`pt-BR` ou `en`) em cookie; sem cookie vale o `Accept-Language` |
+| `POST /cursor`, `POST /cor` | Tipo de mouse (`system` ou `custom`) e cor de destaque (`mono` ou uma da paleta) em cookies, aplicados como `data-*` no `<html>` |
 | `GET /entrar/google` | Início do login: cookie curto com state, nonce e PKCE; redireciona ao Google. Sem credenciais, página explicando |
 | `GET /entrar/google/callback` | Retorno do Google: confere state, troca o código, verifica o `id_token`, liga ou funde a conta, abre a sessão |
 | `POST /sair` | Encerra a sessão deste navegador |
@@ -117,6 +120,14 @@ Rotas da Fase 0:
 - **Sessões**: token aleatório de 32 bytes no cookie, só o hash no banco; HttpOnly, SameSite=Lax, Secure fora de development; 90 dias renovados no uso. Toda consulta de semana filtra pelo usuário da sessão.
 - **Login**: OpenID Connect com PKCE, state e nonce em cookie curto; `id_token` verificado contra o JWKS do Google (assinatura, emissor, audiência, validade, nonce); só e-mail confirmado. Cancelamento e falhas viram páginas explicando, nunca sessão.
 - **Segredos**: só as credenciais do Google, por ambiente, com placeholders em `.env.example`.
+
+## SEO e descoberta pública
+
+`internal/server/seo.go` mantém a lista de páginas públicas (`publicPages`: template e URL por idioma), metadados, robots e sitemap; rotas, hreflang, seletor de idioma e sitemap derivam da lista. O aplicativo continua em `/`, com suas rotas fora do índice; as páginas de apresentação têm conteúdo estável, sem consultar sessão, e seguem só o cookie de tema. A landing (`pages/landing.html`) tem abertura em duas colunas (headline, texto e botão na cor da marca; a mascote à direita, partial `mascot.html`), "como funciona" como três passos e uma cena em SVG que reage ao passo marcado (rádios e `:has`; com o script a posição do bloco na tela, durante a rolagem normal, escolhe o passo), a faixa dos aplicativos (largura total, fundo `--color-band`, selo do Google Play sem link até `playStoreURL` existir), seis pontos fortes; as perguntas frequentes ficam em `pages/faq.html` (`/perguntas-frequentes`, `/en/faq`), com `FAQPage` no JSON-LD. Barra com tema e idioma e rodapé institucional estão na partial `public.html`, compartilhada pelas duas. Carregam o `app.js` como melhoria. Todos os textos estão nos catálogos PT-BR e inglês. O idioma escolhido acompanha os links de entrada (`/?lang=en` e `/semanas/nova?lang=en`) e é guardado como preferência ao entrar no aplicativo.
+
+Canonical, hreflang e imagens sociais usam `WEEKLLY_BASE_URL`, nunca o host recebido na requisição. A indexação exige `WEEKLLY_ENV=production`, origem HTTPS e `WEEKLLY_SEARCH_INDEXING=true`; o padrão é desligado. O JSON-LD é serializado pela stdlib e autorizado por hash SHA-256 específico na CSP, sem `unsafe-inline`. HTML continua com cache privado; redirects e respostas operacionais recebem `no-store` por padrão.
+
+As imagens PNG são assets embutidos; para regenerar usando marca, tokens e traduções existentes: `task css` e `node e2e/scripts/generate-social.mjs`. Playwright é só ferramenta de desenvolvimento. Procedimentos de publicação e medição em [docs/SEO.md](docs/SEO.md).
 
 ## Custo
 

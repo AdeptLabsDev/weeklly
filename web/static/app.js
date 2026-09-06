@@ -56,34 +56,47 @@ function elementFrom(html) {
 // de rolagem ele some e o cursor do sistema volta. Só com ponteiro fino.
 
 const cursor = (() => {
-  const el = document.querySelector("[data-cursor]");
+  const el = document.querySelector("[data-cursor-el]");
   if (!el || !matchMedia("(any-pointer: fine)").matches || typeof el.showPopover !== "function") return null;
   const root = document.documentElement;
-  root.classList.add("has-cursor");
 
+  let active = false;
   let x = -100;
   let y = -100;
   let nativeTarget = false; // o alvo sob o ponteiro tem cursor do sistema
   const place = () => { el.style.transform = `translate(${x}px, ${y}px)`; };
   const raise = () => {
+    if (!active) return;
     try {
       if (el.matches(":popover-open")) el.hidePopover();
       el.showPopover();
     } catch { /* fora do documento */ }
   };
-  raise();
+
+  // Liga ou desliga: é uma preferência ("Tipo de mouse"), desligada por padrão.
+  function set(on) {
+    active = on;
+    root.classList.toggle("has-cursor", on);
+    if (on) {
+      raise();
+      if (x >= 0) el.classList.add("is-visible");
+    } else {
+      el.classList.remove("is-visible", "is-pressing");
+      try { if (el.matches(":popover-open")) el.hidePopover(); } catch { /* idem */ }
+    }
+  }
 
   try {
     const saved = sessionStorage.getItem("weeklly_cursor");
     if (saved) {
       [x, y] = saved.split(",").map(Number);
       place();
-      el.classList.add("is-visible");
     }
   } catch { /* sem sessionStorage */ }
   addEventListener("pagehide", () => {
     try { sessionStorage.setItem("weeklly_cursor", `${x},${y}`); } catch { /* idem */ }
   });
+  set(root.dataset.cursor === "custom");
 
   // Barra de rolagem de um elemento (dentro da caixa, fora da área de
   // conteúdo) ou da própria página.
@@ -105,6 +118,7 @@ const cursor = (() => {
     }
     x = event.clientX;
     y = event.clientY;
+    if (!active) return;
     place();
     el.classList.toggle("is-native", nativeTarget || overScrollbar(event));
     el.classList.add("is-visible");
@@ -131,6 +145,7 @@ const cursor = (() => {
 
   return {
     raise,
+    set,
     // Fora da captura da troca de tema: o retrato antigo sai sem o cursor e o
     // novo o mostra ao vivo, então ele não aparece congelado durante a varredura.
     pause: () => el.classList.add("is-captured"),
@@ -144,7 +159,7 @@ const cursor = (() => {
 // diálogos destrutivos.
 
 function closePopovers() {
-  for (const open of document.querySelectorAll("[popover]:not([data-cursor]):popover-open")) open.hidePopover();
+  for (const open of document.querySelectorAll("[popover]:not([data-cursor-el]):popover-open")) open.hidePopover();
 }
 
 for (const opener of document.querySelectorAll("[data-open-dialog]")) {
@@ -177,28 +192,70 @@ function preference(name, value) {
   document.cookie = `${name}=${value}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
 }
 
+// Varredura da esquerda para a direita (app.css) para trocas que mudam a
+// página inteira: tema e cor. Só o tema gira o ícone do botão.
+function wipe(apply, spinIcon) {
+  if (typeof document.startViewTransition !== "function" || reduceMotion.matches) {
+    apply();
+    return;
+  }
+  const root = document.documentElement;
+  root.classList.toggle("is-wiping-quiet", !spinIcon);
+  cursor?.pause();
+  const transition = document.startViewTransition(() => {
+    apply();
+    cursor?.resume();
+  });
+  transition.finished.finally(() => root.classList.remove("is-wiping-quiet"));
+}
+
 const themeForm = document.querySelector("form.theme");
 if (themeForm) {
   themeForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const next = themeForm.elements.theme.value === "light" ? "light" : "dark";
-    const apply = () => {
+    preference("weeklly_theme", next);
+    wipe(() => {
       document.documentElement.dataset.theme = next;
       themeForm.elements.theme.value = next === "light" ? "dark" : "light";
       themeForm.querySelector("button")?.setAttribute("aria-label", next === "light" ? t("toDark") : t("toLight"));
       document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", next);
       document.querySelector('meta[name="theme-color"]')?.setAttribute("content", next === "light" ? "#fafafa" : "#0a0a0a");
-    };
-    preference("weeklly_theme", next);
-    if (typeof document.startViewTransition === "function" && !reduceMotion.matches) {
-      cursor?.pause();
-      document.startViewTransition(() => {
-        apply();
-        cursor?.resume();
-      });
-    } else {
-      apply();
-    }
+    }, true);
+  });
+}
+
+// ---- Tipo de mouse e cor ---------------------------------------------------
+// Preferências do menu de configurações, em cookies que o servidor lê. O
+// tipo de mouse liga ou desliga o cursor do produto na hora; a cor entra
+// com a mesma varredura do tema.
+
+function pressOnly(form, value) {
+  for (const button of form.querySelectorAll("[aria-pressed]")) {
+    button.setAttribute("aria-pressed", String(button.value === value));
+  }
+}
+
+for (const form of document.querySelectorAll("form[action='/cursor']")) {
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const value = event.submitter?.value === "custom" ? "custom" : "system";
+    preference("weeklly_cursor", value);
+    document.documentElement.dataset.cursor = value;
+    form.dataset.index = value === "custom" ? "1" : "0";
+    pressOnly(form, value);
+    cursor?.set(value === "custom");
+  });
+}
+
+for (const form of document.querySelectorAll("form[action='/cor']")) {
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const value = event.submitter?.value;
+    if (!value || value === document.documentElement.dataset.accent) return;
+    preference("weeklly_accent", value);
+    pressOnly(form, value);
+    wipe(() => { document.documentElement.dataset.accent = value; }, false);
   });
 }
 
@@ -217,23 +274,73 @@ for (const form of document.querySelectorAll("form[action='/idioma']")) {
   });
 }
 {
-  const settings = document.getElementById("settings-menu");
   const panel = document.getElementById("language-menu");
-  const row = settings?.querySelector("[popovertarget='language-menu']");
-  if (settings && panel && row) {
+  const invoker = document.querySelector("[popovertarget='language-menu']");
+  const settings = document.getElementById("settings-menu");
+  if (panel && invoker) {
     const placePanel = () => {
-      const menu = settings.getBoundingClientRect();
-      const anchor = row.getBoundingClientRect();
-      const beside = menu.left - panel.offsetWidth - 8 >= 8;
-      const top = beside ? anchor.top - 8 : menu.bottom + 8;
+      const anchor = invoker.getBoundingClientRect();
+      let top = anchor.bottom + 8;
+      let right = innerWidth - anchor.right;
+      if (settings?.contains(invoker)) {
+        // Dentro das configurações: ao lado do menu, alinhado à linha; sem espaço, abaixo do menu.
+        const menu = settings.getBoundingClientRect();
+        const beside = menu.left - panel.offsetWidth - 8 >= 8;
+        top = beside ? anchor.top - 8 : menu.bottom + 8;
+        right = beside ? innerWidth - menu.left + 8 : innerWidth - menu.right;
+      }
       panel.style.top = `${Math.max(8, Math.min(top, innerHeight - panel.offsetHeight - 8))}px`;
-      panel.style.right = `${beside ? innerWidth - menu.left + 8 : innerWidth - menu.right}px`;
+      panel.style.right = `${Math.max(8, right)}px`;
     };
     panel.addEventListener("toggle", (event) => {
       if (event.newState === "open") placePanel();
     });
     addEventListener("resize", () => {
       if (panel.matches(":popover-open")) placePanel();
+    });
+  }
+}
+
+// ---- Como funciona (landing) -----------------------------------------------
+// Os passos são rádios e a cena reage a eles só com CSS. Com o script, a
+// rolagem conduz sem prender a página: a posição do bloco na tela (0 = o
+// centro dele na borda de baixo, 1 = na de cima) escolhe o passo, e o trecho
+// de rolagem até o próximo passo enche o trilho (--how-progress). Clicar num
+// passo rola a página até a posição daquele passo, para os dois combinarem.
+{
+  const how = document.querySelector(".how");
+  if (how) {
+    const radios = [...how.querySelectorAll(".how-radio")];
+    const gates = [0.38, 0.6]; // posição que abre os passos 2 e 3
+    const reach = 0.23; // trecho de rolagem que enche cada trilho
+    const targets = [gates[0] - reach / 2, (gates[0] + gates[1]) / 2, gates[1] + reach / 2];
+    let queued = false;
+    const center = () => {
+      const box = how.getBoundingClientRect();
+      return box.top + box.height / 2;
+    };
+    const update = () => {
+      queued = false;
+      const at = (innerHeight - center()) / innerHeight;
+      const index = at < gates[0] ? 0 : at < gates[1] ? 1 : 2;
+      if (!radios[index].checked) radios[index].checked = true;
+      const from = index === 0 ? gates[0] - reach : gates[index - 1];
+      const to = index === 2 ? gates[1] + reach : gates[index];
+      how.style.setProperty("--how-progress", Math.min(1, Math.max(0, (at - from) / (to - from))).toFixed(3));
+    };
+    const schedule = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(update);
+    };
+    schedule();
+    addEventListener("scroll", schedule, { passive: true });
+    addEventListener("resize", schedule);
+    how.addEventListener("change", (event) => {
+      const index = radios.indexOf(event.target);
+      if (index < 0) return;
+      const wanted = innerHeight * (1 - targets[index]);
+      scrollBy({ top: center() - wanted, behavior: reduceMotion.matches ? "auto" : "smooth" });
     });
   }
 }
@@ -609,9 +716,16 @@ if (board) {
     refreshEmpty(list.closest(".card"));
     return item;
   }
+  // Trocar a tarefa pela versão do servidor. Se o "feita" mudou, a nova
+  // entra com a classe que anima o check e a linha (app.css).
   function replaceTask(id, html) {
     const item = findTask(id);
     const fresh = elementFrom(html);
+    if (item && !reduceMotion.matches && item.classList.contains("is-done") !== fresh.classList.contains("is-done")) {
+      const motion = fresh.classList.contains("is-done") ? "is-just-done" : "is-just-undone";
+      fresh.classList.add(motion);
+      setTimeout(() => fresh.classList.remove(motion), 600);
+    }
     item?.replaceWith(fresh);
     return fresh;
   }
@@ -640,6 +754,7 @@ if (board) {
     edit: (id, fields) => send(`/tarefas/${id}/editar`, fields),
     done: (id, done) => send(`/tarefas/${id}/concluir`, { done: done ? "1" : "0" }),
     move: (id, weekday, position) => send(`/tarefas/${id}/mover`, { weekday, position }),
+    duplicate: (id) => send(`/tarefas/${id}/duplicar`, {}),
     remove: (id) => send(`/tarefas/${id}/excluir`, {}),
   };
 
@@ -760,6 +875,16 @@ if (board) {
         record({
           undo: async () => { snap.id = await restore(snap); },
           redo: async () => { await api.remove(snap.id); removeTask(snap.id); },
+        });
+      } else if (form.matches(".task-copy")) {
+        const data = await api.duplicate(snap.id);
+        const item = placeTask(data.html, data.weekday, data.position);
+        item.scrollIntoView({ block: "nearest" });
+        say(t("duplicated"));
+        const copy = snapshot(item);
+        record({
+          undo: async () => { await api.remove(copy.id); removeTask(copy.id); },
+          redo: async () => { copy.id = await restore(copy); },
         });
       }
     } catch (error) {

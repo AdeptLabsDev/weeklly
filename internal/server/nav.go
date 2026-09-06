@@ -18,6 +18,9 @@ import (
 type page struct {
 	Title     string
 	BodyClass string
+	// Public usa a apresentação do produto, sem dados ou scripts do app.
+	Public bool
+	SEO    seoView
 	// Theme é "dark" ou "light"; render preenche a partir do cookie.
 	Theme string
 	// Cursor é "system" ou "custom"; Accent é "mono" ou uma cor de accents.

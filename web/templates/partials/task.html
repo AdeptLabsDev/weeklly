@@ -9,7 +9,7 @@
     </button>
   </form>
   <div class="task-main">
-    <button type="button" class="task-title" data-edit="title" aria-label="{{.L.T "task.edit" .Title}}">{{.Title}}</button>
+    <button type="button" class="task-title" data-edit="title" aria-label="{{.L.T "task.edit" .Title}}"><span class="task-title-text">{{.Title}}</span></button>
     <button type="button" class="task-time{{if not .Time}} is-empty{{end}}" data-edit="time" aria-label="{{if .Time}}{{.L.T "task.editTime" .Time}}{{else}}{{.L.T "task.setTime"}}{{end}}">
       {{if .Time}}<time datetime="{{.Time}}">{{.Time}}</time>{{else}}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5"/></svg>{{end}}
     </button>
@@ -17,6 +17,11 @@
   <form class="task-remove" method="post" action="/tarefas/{{.ID}}/excluir">
     <button type="submit" class="task-delete" aria-label="{{.L.T "task.delete" .Title}}">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg>
+    </button>
+  </form>
+  <form class="task-copy" method="post" action="/tarefas/{{.ID}}/duplicar">
+    <button type="submit" class="task-duplicate" aria-label="{{.L.T "task.duplicate" .Title}}" title="{{.L.T "task.duplicateTitle"}}">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8"/><path d="M3.5 10.5v-7a1 1 0 0 1 1-1h6"/></svg>
     </button>
   </form>
 </li>{{end}}

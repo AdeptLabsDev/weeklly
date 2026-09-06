@@ -74,6 +74,22 @@ func TestTasksViaJSON(t *testing.T) {
 		t.Errorf("patch vazio: %d", status)
 	}
 
+	// Duplicar: cópia logo abaixo, mesmo título, sem "feita", com o botão na parcial.
+	status, data = a.postJSON("/tarefas/"+id+"/duplicar", nil)
+	copyID, _ := data["id"].(string)
+	if status != http.StatusCreated || copyID == "" || copyID == id || data["position"] != float64(1) || data["done"] != false || !strings.Contains(data["html"].(string), "Treino na academia") {
+		t.Errorf("duplicar: %d %v", status, data)
+	}
+	if !strings.Contains(data["html"].(string), `action="/tarefas/`+copyID+`/duplicar"`) {
+		t.Error("parcial sem o botão de duplicar")
+	}
+	if status, _ := a.postJSON("/tarefas/"+copyID+"/excluir", nil); status != http.StatusNoContent {
+		t.Errorf("excluir cópia: %d", status)
+	}
+	if status, _ := a.postJSON("/tarefas/nao-existe-aqui-00/duplicar", nil); status != http.StatusNotFound {
+		t.Errorf("duplicar inexistente: %d", status)
+	}
+
 	// O quadro mostra a tarefa e esconde o estado vazio daquele dia.
 	board := a.get(location)
 	if !strings.Contains(board.body, "Treino na academia") || !strings.Contains(board.body, `id="tarefa-`+id+`"`) {
@@ -253,6 +269,39 @@ func TestLanguage(t *testing.T) {
 	}
 	if status, _ := a.postJSON("/idioma", url.Values{"lang": {"en"}}); status != http.StatusNoContent {
 		t.Errorf("idioma via script: %d", status)
+	}
+}
+
+func TestCursorAndAccentCookies(t *testing.T) {
+	a := newApp(t, false)
+	if r := a.get("/"); !strings.Contains(r.body, `data-cursor="system"`) || !strings.Contains(r.body, `data-accent="mono"`) {
+		t.Error("padrão deveria ser cursor do sistema e sem cor")
+	}
+	if r := a.post("/cursor", url.Values{"cursor": {"custom"}}); r.status != http.StatusSeeOther {
+		t.Errorf("cursor: %d", r.status)
+	}
+	if r := a.post("/cor", url.Values{"accent": {"orange"}}); r.status != http.StatusSeeOther {
+		t.Errorf("cor: %d", r.status)
+	}
+	r := a.get("/")
+	for _, want := range []string{
+		`data-cursor="custom"`, `data-accent="orange"`,
+		`value="custom" class="segmented-btn" aria-pressed="true"`,
+		`value="orange" class="swatch swatch-orange" aria-pressed="true"`,
+		`value="mono" class="swatch swatch-mono" aria-pressed="false"`,
+	} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("preferências não aplicadas: falta %q", want)
+		}
+	}
+	// Valores desconhecidos caem no padrão.
+	a.post("/cursor", url.Values{"cursor": {"laser"}})
+	a.post("/cor", url.Values{"accent": {"#ff0000"}})
+	if r := a.get("/"); !strings.Contains(r.body, `data-cursor="system"`) || !strings.Contains(r.body, `data-accent="mono"`) {
+		t.Error("valor inválido deveria voltar ao padrão")
+	}
+	if status, _ := a.postJSON("/cor", url.Values{"accent": {"blue"}}); status != http.StatusNoContent {
+		t.Errorf("cor via script: %d", status)
 	}
 }
 

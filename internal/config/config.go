@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/url"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -35,8 +36,10 @@ type Config struct {
 	// não é conhecido (o fuso do navegador entra na Fase 1).
 	Timezone *time.Location
 	// BaseURL é a origem pública do site (esquema e host, sem caminho), usada
-	// para montar a URL de retorno do login. Em development cai em http://Addr.
+	// para login, canonical e sitemap. Em development cai em http://Addr.
 	BaseURL string
+	// SearchIndexing libera a descoberta pública apenas na produção oficial.
+	SearchIndexing bool
 	// Google são as credenciais do login com o Google. Vazias desligam o login.
 	Google Google
 }
@@ -111,6 +114,15 @@ func Load(getenv func(string) string) (Config, error) {
 	if cfg.Google.Configured() && cfg.Env == Production && !strings.HasPrefix(cfg.BaseURL, "https://") {
 		return Config{}, fmt.Errorf("WEEKLLY_BASE_URL=%q: o login com o Google em produção exige https", cfg.BaseURL)
 	}
+	if raw := getenv("WEEKLLY_SEARCH_INDEXING"); raw != "" {
+		cfg.SearchIndexing, err = strconv.ParseBool(raw)
+		if err != nil {
+			return Config{}, fmt.Errorf("WEEKLLY_SEARCH_INDEXING: use true ou false")
+		}
+	}
+	if cfg.SearchIndexing && (cfg.Env != Production || !strings.HasPrefix(cfg.BaseURL, "https://")) {
+		return Config{}, fmt.Errorf("WEEKLLY_SEARCH_INDEXING=true exige WEEKLLY_ENV=production e WEEKLLY_BASE_URL com https")
+	}
 
 	return cfg, nil
 }
@@ -119,7 +131,7 @@ func Load(getenv func(string) string) (Config, error) {
 func baseURL(raw string, env Env, host, port string) (string, error) {
 	if raw == "" {
 		if env == Production {
-			return "", nil // sem login, sem necessidade; com login, o Google recusa a URL de retorno
+			return "", nil // sem origem, login e indexação continuam desligados
 		}
 		if host == "" || host == "0.0.0.0" || host == "::" {
 			host = "127.0.0.1"
@@ -127,7 +139,7 @@ func baseURL(raw string, env Env, host, port string) (string, error) {
 		return "http://" + net.JoinHostPort(host, port), nil
 	}
 	u, err := url.Parse(raw)
-	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || (u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.Fragment != "" {
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" || u.User != nil || (u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || strings.ContainsAny(raw, "?#") {
 		return "", fmt.Errorf("WEEKLLY_BASE_URL=%q: use só esquema e host, como https://weeklly.app", raw)
 	}
 	return strings.TrimSuffix(raw, "/"), nil

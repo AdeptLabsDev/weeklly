@@ -53,6 +53,17 @@ test("visitante cria semanas, tarefas, troca tema e ordem @shots", async ({ page
   await expect(page.locator(`#dia-${today} .task-time time`).nth(1)).toHaveText("15:30");
   await expect(page.locator("[data-status]")).toContainText("Salvo");
 
+  // Duplicar: a cópia entra logo abaixo, com o mesmo texto e horário; desfazer a tira.
+  const treino = page.locator(`#dia-${today} .task`, { hasText: "Treino" }).first();
+  await treino.hover();
+  await treino.getByRole("button", { name: /Duplicar: Treino/ }).click();
+  await expect(page.locator(`#dia-${today} .task`)).toHaveCount(4);
+  await expect(page.locator(`#dia-${today} .task`).nth(1)).toContainText("Treino");
+  await expect(page.locator(`#dia-${today} .task`).nth(1).locator("time")).toHaveText("07:00");
+  await expect(page.locator("[data-status]")).toContainText("Tarefa duplicada");
+  await page.getByRole("button", { name: "Desfazer" }).click();
+  await expect(page.locator(`#dia-${today} .task`)).toHaveCount(3);
+
   // O seletor de horário abre no campo e "Sem horário" limpa.
   const timeField = page.locator(`.task-add[data-weekday="${today}"] input[name="time"]`);
   await timeField.click();
@@ -67,7 +78,10 @@ test("visitante cria semanas, tarefas, troca tema e ordem @shots", async ({ page
   // Concluir, editar título no lugar, editar horário, excluir.
   const first = page.locator(`#dia-${today} .task`).first();
   await first.getByRole("checkbox").click();
-  await expect(page.locator(`#dia-${today} .task`).first()).toHaveClass(/is-done/);
+  // A tarefa concluída entra animando (check e linha) e termina riscada.
+  await expect(page.locator(`#dia-${today} .task`).first()).toHaveClass(/is-done is-just-done/);
+  await expect(page.locator(`#dia-${today} .task`).first()).not.toHaveClass(/is-just-done/);
+  expect(await page.locator(`#dia-${today} .task`).first().locator(".task-title-text").evaluate((el) => getComputedStyle(el).backgroundSize)).toMatch(/^100%/);
 
   const second = page.locator(`#dia-${today} .task`).nth(1);
   await second.getByRole("button", { name: /Editar: Revisar o roadmap/ }).click();
@@ -182,6 +196,24 @@ test("visitante cria semanas, tarefas, troca tema e ordem @shots", async ({ page
   await page.getByRole("button", { name: "Configurações" }).click();
   const settings = page.locator("#settings-menu");
   await expect(settings).toBeVisible();
+
+  // Tipo de mouse: o do sistema por padrão; o do weeklly liga na hora.
+  const html = page.locator("html");
+  await expect(html).toHaveAttribute("data-cursor", "system");
+  await expect(html).not.toHaveClass(/has-cursor/);
+  await settings.getByRole("button", { name: "Mouse do weeklly" }).click();
+  await expect(html).toHaveAttribute("data-cursor", "custom");
+  if (info.project.name === "desktop") await expect(html).toHaveClass(/has-cursor/);
+
+  // Cor: a laranja entra com a varredura e colore o nome e o cursor.
+  await expect(html).toHaveAttribute("data-accent", "mono");
+  await settings.getByRole("button", { name: "Laranja" }).click();
+  await expect(html).toHaveAttribute("data-accent", "orange");
+  await page.waitForTimeout(700);
+  const accent = await page.locator("html").evaluate((el) => getComputedStyle(el).getPropertyValue("--color-accent").trim());
+  expect(accent).toBe("#ffa057");
+  await expect(settings.getByRole("button", { name: "Laranja" })).toHaveAttribute("aria-pressed", "true");
+
   const languageRow = settings.getByRole("button", { name: /Idioma/ });
   await expect(languageRow).toContainText("Português");
   const languages = page.locator("#language-menu");
@@ -194,6 +226,9 @@ test("visitante cria semanas, tarefas, troca tema e ordem @shots", async ({ page
   await page.screenshot({ path: `${shots}/${tag}-06-configuracoes.png` });
   await languages.getByRole("button", { name: "English" }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  // As preferências ficam depois de recarregar.
+  await expect(page.locator("html")).toHaveAttribute("data-cursor", "custom");
+  await expect(page.locator("html")).toHaveAttribute("data-accent", "orange");
   await expect(page.getByRole("heading", { name: "Sign-in isn't set up yet" })).toBeVisible();
   await page.goto("/semanas");
   await expect(page.getByRole("heading", { name: "Your weeks" })).toBeVisible();
@@ -320,11 +355,15 @@ test("a faixa desliza com a roda e com o arrasto, e para onde a mão parou", asy
   // ponteiro, com os arcos enquanto o botão está pressionado. Sobre campos
   // de texto ele some e o I-beam do sistema volta.
   const cursorOf = (selector: string) => page.locator(selector).first().evaluate((el) => getComputedStyle(el).cursor);
+  await expect(page.locator("html")).not.toHaveClass(/has-cursor/); // desligado por padrão
+  expect(await cursorOf(".card-head")).toBe("default");
+  await page.context().addCookies([{ name: "weeklly_cursor", value: "custom", url: "http://127.0.0.1:8090" }]);
+  await page.reload();
   await expect(page.locator("html")).toHaveClass(/has-cursor/);
   expect(await cursorOf(".card-head")).toBe("none");
   expect(await cursorOf(".btn")).toBe("none");
   expect(await cursorOf(".task-add-title")).toBe("text");
-  const cursor = page.locator("[data-cursor]");
+  const cursor = page.locator("[data-cursor-el]");
   await page.mouse.move(x, y);
   await expect(cursor).toHaveClass(/is-visible/);
   await expect(cursor).not.toHaveClass(/is-native/);
@@ -343,7 +382,7 @@ test("a faixa desliza com a roda e com o arrasto, e para onde a mão parou", asy
   // A posição sobrevive à navegação: a página nova já mostra o cursor onde ele estava.
   await page.getByRole("link", { name: /weeklly, suas semanas/ }).click();
   await expect(page).toHaveURL(/\/semanas$/);
-  await expect(page.locator("[data-cursor]")).toHaveClass(/is-visible/);
+  await expect(page.locator("[data-cursor-el]")).toHaveClass(/is-visible/);
 });
 
 test("arrastar pela alça reordena dentro do dia e move para outro dia", async ({ page }, info) => {

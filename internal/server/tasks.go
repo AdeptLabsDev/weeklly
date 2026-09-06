@@ -125,6 +125,21 @@ func (s *Server) handleMoveTask(w http.ResponseWriter, r *http.Request) {
 	s.taskOK(w, r, http.StatusOK, r.FormValue("week"), t)
 }
 
+// handleDuplicateTask cria uma cópia logo abaixo da tarefa.
+func (s *Server) handleDuplicateTask(w http.ResponseWriter, r *http.Request) {
+	v := currentVisitor(r)
+	if !v.ok {
+		s.taskError(w, r, http.StatusNotFound, s.locale(r).T("task.error.notHere"))
+		return
+	}
+	t, err := s.opts.Store.DuplicateTask(r.Context(), v.user.ID, r.PathValue("id"))
+	if err != nil {
+		s.taskFailure(w, r, err)
+		return
+	}
+	s.taskOK(w, r, http.StatusCreated, r.FormValue("week"), t)
+}
+
 // handleDeleteTask apaga a tarefa.
 func (s *Server) handleDeleteTask(w http.ResponseWriter, r *http.Request) {
 	v := currentVisitor(r)

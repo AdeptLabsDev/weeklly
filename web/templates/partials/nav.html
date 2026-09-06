@@ -47,6 +47,23 @@
       <svg class="setting-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
     </span>
   </button>
+  <div class="setting">
+    <span class="setting-label" id="cursor-label">{{.L.T "settings.cursor"}}</span>
+    <form class="segmented segmented-icons" method="post" action="/cursor" data-index="{{if eq .Cursor "custom"}}1{{else}}0{{end}}" aria-labelledby="cursor-label">
+      <span class="segmented-pill" aria-hidden="true"></span>
+      {{range .Cursors}}
+      <button type="submit" name="cursor" value="{{.Value}}" class="segmented-btn" aria-pressed="{{if .Current}}true{{else}}false{{end}}" aria-label="{{.Label}}" title="{{.Label}}">
+        {{if eq .Value "system"}}<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.2v12.6l3.2-2.9 2.2 4.8 2-.9-2.2-4.8h4.4Z"/></svg>{{else}}<svg viewBox="8 8 22 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M10 10L25.14 16.74Q26.6 17.4 25.07 17.88L21.32 19.06Q19.6 19.6 19.06 21.32L17.88 25.07Q17.4 26.6 16.74 25.14Z"/></svg>{{end}}
+      </button>
+      {{end}}
+    </form>
+  </div>
+  <div class="setting">
+    <span class="setting-label" id="accent-label">{{.L.T "settings.accent"}}</span>
+    <form class="swatches" method="post" action="/cor" aria-labelledby="accent-label">
+      {{range .Accents}}<button type="submit" name="accent" value="{{.Value}}" class="swatch swatch-{{.Value}}" aria-pressed="{{if .Current}}true{{else}}false{{end}}" aria-label="{{.Label}}" title="{{.Label}}"></button>{{end}}
+    </form>
+  </div>
 </div>
 <div id="language-menu" popover class="menu menu-language">
   <p class="menu-title">{{.L.T "settings.language"}}</p>

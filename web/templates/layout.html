@@ -1,22 +1,27 @@
 <!doctype html>
-<html lang="{{.L.Lang}}" data-theme="{{.Theme}}">
+<html lang="{{.L.Lang}}" data-theme="{{.Theme}}" data-cursor="{{.Cursor}}" data-accent="{{.Accent}}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="{{.Theme}}">
   <meta name="theme-color" content="{{if eq .Theme "light"}}#fafafa{{else}}#0a0a0a{{end}}">
   <title>{{.Title}}</title>
-  <link rel="icon" href="{{asset "favicon.svg"}}" type="image/svg+xml">
+  {{template "seo" .}}
+  <link rel="icon" href="{{asset "favicon.svg"}}" type="image/svg+xml" sizes="any">
+  <link rel="icon" href="{{asset "favicon-32.png"}}" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="{{asset "apple-touch-icon.png"}}" sizes="180x180">
   <link rel="preload" href="{{asset "fonts/nunito.woff2"}}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{asset "app.css"}}">
 </head>
 <body class="{{.BodyClass}}" data-i18n="{{.L.ClientJSON}}">
-{{template "nav" .}}
+{{if not .Public}}{{template "nav" .}}{{end}}
 {{block "content" .}}{{end}}
+{{if not .Public}}
 {{template "week-dialog" (dict "ID" "new-week" "Form" .NewWeek)}}
 {{if .Rename}}{{template "week-dialog" (dict "ID" "rename-week" "Form" .Rename)}}{{end}}
 {{if .Delete}}{{template "delete-dialog" .Delete}}{{end}}
 {{template "cursor"}}
+{{end}}
 <script type="module" src="{{asset "app.js"}}"></script>
 </body>
 </html>

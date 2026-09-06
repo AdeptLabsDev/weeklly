@@ -9,3 +9,4 @@ task dev
 
 - [Arquitetura e como rodar](ARCHITECTURE.md)
 - [Roadmap](docs/ROADMAP.md) · [Decisões](docs/DECISIONS.md) · [Backlog](docs/BACKLOG.md)
+- [SEO: implementação, skills e lançamento](docs/SEO.md)

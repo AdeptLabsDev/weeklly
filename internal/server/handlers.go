@@ -13,6 +13,7 @@ import (
 // handleHome abre o app onde o usuário parou: a última semana aberta, ou a
 // mais recente. Sem semanas, mostra o hub (princípio 1 do roadmap).
 func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
+	s.rememberEntryLanguage(w, r)
 	v := currentVisitor(r)
 	if v.ok {
 		target := v.session.LastWeekID
@@ -56,6 +57,7 @@ func (s *Server) renderHub(w http.ResponseWriter, r *http.Request) {
 // handleNewWeekPage é a versão em página do diálogo "Nova semana": funciona
 // sem JavaScript e é o destino dos links que o script transforma em diálogo.
 func (s *Server) handleNewWeekPage(w http.ResponseWriter, r *http.Request) {
+	s.rememberEntryLanguage(w, r)
 	s.renderForm(w, r, http.StatusOK, newWeekForm(s.locale(r)))
 }
 
@@ -179,14 +181,24 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name
 	if p.Theme == "" {
 		p.Theme = themeFrom(r)
 	}
-	p.Cursor = cursorFrom(r)
-	p.Accent = accentFrom(r)
+	if p.Public {
+		p.Cursor = cursorSystem
+		p.Accent = accentMono
+	} else {
+		p.Cursor = cursorFrom(r)
+		p.Accent = accentFrom(r)
+	}
 	if p.L.IsZero() {
 		p.L = s.locale(r)
 	}
 	if p.NewWeek.Action == "" {
 		p.NewWeek = newWeekForm(p.L)
 	}
+	if p.SEO.Robots == "" {
+		p.SEO.Robots = privateRobots
+	}
+	w.Header().Set("Content-Language", string(p.L.Lang()))
+	w.Header().Set("X-Robots-Tag", p.SEO.Robots)
 	if err := s.views.render(w, status, name, p); err != nil {
 		s.serverError(w, r, err)
 	}
@@ -194,6 +206,8 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name
 
 func (s *Server) serverError(w http.ResponseWriter, r *http.Request, err error) {
 	s.opts.Logger.Error("erro no handler", "err", err, "path", r.URL.Path, "request_id", requestID(r.Context()))
+	w.Header().Set("X-Robots-Tag", privateRobots)
+	w.Header().Set("Cache-Control", "private, no-store")
 	http.Error(w, "erro interno", http.StatusInternalServerError)
 }
 

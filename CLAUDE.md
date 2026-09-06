@@ -16,7 +16,7 @@ Planejador semanal: sete dias em um quadro fixo, texto livre por dia, salvo sozi
 
 ## Stack cravada
 
-Go com biblioteca padrão (net/http, html/template, slog, embed) · SQLite WAL via modernc, sem cgo · Tailwind v4 CLI standalone, sem Node · JS nativo, sem framework e sem bibliotecas de animação · dark-first com tema claro · monocromático até a cor de destaque ser definida (só `--color-accent` muda) · Nunito só em nomes e títulos, fonte do sistema no resto.
+Go com biblioteca padrão (net/http, html/template, slog, embed) · SQLite WAL via modernc, sem cgo · Tailwind v4 CLI standalone, sem Node · JS nativo, sem framework e sem bibliotecas de animação · dark-first com tema claro · monocromático por padrão, com a cor de destaque escolhida por cada pessoa nas configurações (D22) · Nunito só em nomes e títulos, fonte do sistema no resto.
 
 ## Regras deste repositório
 

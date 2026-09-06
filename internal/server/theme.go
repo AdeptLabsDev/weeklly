@@ -61,11 +61,29 @@ func validAccent(v string) bool {
 // locale escolhe o idioma da requisição: cookie, senão Accept-Language,
 // senão português.
 func (s *Server) locale(r *http.Request) i18n.Locale {
+	if lang, ok := entryLanguage(r); ok {
+		return i18n.L(lang)
+	}
 	cookie := ""
 	if c, err := r.Cookie(langCookie); err == nil {
 		cookie = c.Value
 	}
 	return i18n.L(i18n.Negotiate(cookie, r.Header.Get("Accept-Language")))
+}
+
+// entryLanguage mantém o idioma escolhido na página pública ao entrar no
+// aplicativo. A query só vale nos dois pontos de entrada, nunca nos quadros.
+func entryLanguage(r *http.Request) (i18n.Lang, bool) {
+	if (r.Method == http.MethodGet || r.Method == http.MethodHead) && (r.URL.Path == "/" || r.URL.Path == "/semanas/nova") {
+		return i18n.Parse(r.URL.Query().Get("lang"))
+	}
+	return "", false
+}
+
+func (s *Server) rememberEntryLanguage(w http.ResponseWriter, r *http.Request) {
+	if lang, ok := entryLanguage(r); ok {
+		http.SetCookie(w, s.preferenceCookie(langCookie, string(lang)))
+	}
 }
 
 // handleTheme é o caminho sem JavaScript do botão sol/lua.

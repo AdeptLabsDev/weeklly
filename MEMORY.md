@@ -2,9 +2,31 @@
 
 Estado vivo do projeto. Limite: 200 linhas. Detalhe longo vai para `docs/topics/`.
 
+## Estado (2026-09-06, guia visual e imagem social)
+
+- Estilo implementado documentado em `design/ESTILO-WEEKLLY.md`, com tokens, tipografia, composição, fontes e distinção entre a silhueta atual e o cartoon futuro. Capturas locais da landing nos dois temas em `design/referencias/`.
+- Prompt reutilizável em `design/PROMPTS-IMAGENS.md`; prompt executado em `design/PROMPT-TESTE-WEEKLLY.txt`; imagem explicativa gerada e revisada em `design/social/weeklly-o-que-e.png`. Sem alteração de interface.
+- Nesta entrega, `task check` passou por vet e parou no lint com `context loading failed: no go files to analyze`; as etapas seguintes não foram executadas. Nenhuma dependência alterada para contornar o problema.
+
+## Estado (2026-09-06, SEO)
+
+- D23: páginas públicas `/planejador-semanal` e `/en/weekly-planner`, com idioma fixo por URL e sem sessão; `/` continua abrindo onde a pessoa parou. CTAs mantêm idioma ao entrar no app.
+- D29: faixa dos aplicativos na landing (`.landing-apps`, token `--color-band`; `<main>` sem `landing-width`, cada seção tem a sua). Selo do Google Play = `.store-badge`; `playStoreURL` vazia em `seo.go` → `<span>` "em breve".
+- D28: "como funciona" é guiado pela rolagem sem prender a página: o script lê a posição do centro do `.how` na tela (0 embaixo, 1 em cima; fronteiras 0,38 e 0,6), marca o rádio e põe `--how-progress` no `.how`. Tremor do botão = "Shake" do CSS-Tricks (horizontal, em ciclos). FAQ anima com `::details-content` + `interpolate-size` (só CSS).
+- D27: abertura da landing em duas colunas (`.hero-copy` + `.hero-art` com a partial `mascot.html`, silhueta em `currentColor`); `.landing-cta` é o único botão na cor da marca, com `cta-wiggle` no hover. Cartoon da mascote: briefing e prompts em `design/brand/MASCOTE.md`, troca por `<img>` descrita lá.
+- D26 (landing definitiva, parte 1): páginas públicas são a lista `publicPages` em `seo.go`; barra e rodapé na partial `public.html`; "como funciona" = rádios `#how-1..3` + cena SVG movida por `.how:has(#how-N:checked)` em `app.css`, avanço automático no `app.js` (IntersectionObserver + `animationend` do `.how-rail-fill`); FAQ em `pages/faq.html` (`/perguntas-frequentes`, `/en/faq`), perguntas da lista `faqTopics` (chaves `faq.<tópico>.question/answer`).
+- D25: concluir tarefa anima (classes `is-just-done`/`is-just-undone` postas por `replaceTask`; risco é `background-size` no `.task-title-text`), duplicar tarefa (`POST /tarefas/{id}/duplicar`, ícone à direita do x), landing com botão de idioma abrindo o painel `#language-menu` (posicionado a partir do invocador).
+- Mascote (D24): esquilo em `design/brand/squirrel-icon-menu.svg`, na cor principal da marca `#727cf5` (token `--color-brand`, só para marca; começou coral); virou o favicon (SVG + PNG 32 + iPhone 180). Referência da Duolingo seção a seção em `docs/LANDING-REFERENCE.md`, com o plano de landing v3 aguardando três decisões do Miguel (esquilo na abertura, faixa dos sete dias, um botão só na barra).
+- Landing refeita pelo Miguel (rodada 7): barra com sol/lua e PT/EN, headline "grátis e sem cadastro", sem demonstração, passos + seis pontos fortes, FAQ por último, rodapé com seis grupos ("em breve" onde não há página). Tema segue cookie; `app.js` carregado como melhoria. Pendente: páginas Sobre/Contato/Termos/Privacidade e links das redes.
+- Metadados, canonical/hreflang, JSON-LD com hash CSP e PNGs de compartilhamento. `seo.go` centraliza rotas de descoberta. App e erros recebem noindex; sitemap só tem páginas públicas.
+- Indexação desligada por padrão (`WEEKLLY_SEARCH_INDEXING=false`); habilitar exige produção + BaseURL HTTPS oficial. Domínio, deploy, Search Console/Bing e métricas reais seguem pendentes. Pesquisa de skills e plano em `docs/SEO.md`.
+- Validação: `task check` completo passou; Playwright completo: 10 aprovados, 2 casos só de desktop ignorados no mobile. Inclui SEO sem JS e em 320px; capturas revisadas. PNGs regeneráveis com `node e2e/scripts/generate-social.mjs` após `task css`.
+
 ## Estado (2026-09-06, rodada 5)
 
-- Cursor próprio (D22): elemento `partials/cursor.html` (popover manual no top layer) seguindo o ponteiro, `html.has-cursor` esconde o do sistema; some sobre campos de texto e barras de rolagem; posição na `sessionStorage` atravessa navegações. Tokens `--color-cursor` e `--color-cursor-fill`. Cor pendente junto da cor de destaque.
+- Cursor próprio (D22) é opcional: "Tipo de mouse" nas configurações (cookie `weeklly_cursor`, `data-cursor` no html), desligado por padrão porque o navegador mostra o cursor do sistema em navegações, na troca de tema e no duplo clique. Elemento `partials/cursor.html` (`data-cursor-el`, popover manual no top layer), `html.has-cursor` esconde o do sistema.
+- Cor de destaque escolhida pela pessoa (D22): "Cor" nas configurações, cookie `weeklly_accent`, `data-accent` no html, paleta `--accent-*` por tema, `--color-display` nos textos principais e `--color-cursor` no cursor. Padrão "mono".
+- Outra sessão do Claude trabalhou em paralelo nesta árvore (SEO: landing, robots, sitemap). Edições nos mesmos arquivos coexistiram; conferir `git status` antes de mexer.
 - Idioma nas configurações: linha "Idioma · Português ⌄" abre o popover `#language-menu` ao lado (ou abaixo, no celular), lista de `Locale.Languages()`: idioma novo = constante em `All` + `lang.<tag>` nos catálogos + `Parse`.
 
 ## Estado (2026-09-06, rodada 4)
@@ -73,8 +95,10 @@ Estado vivo do projeto. Limite: 200 linhas. Detalhe longo vai para `docs/topics/
 - `setPointerCapture` na faixa faz o `click` ser entregue à faixa (alvo comum de down e up), não ao elemento sob o ponteiro. Cliques "parados" dentro da faixa são tratados no `pointerup` com o alvo guardado no `pointerdown`.
 - View Transitions: `::view-transition-new(root)` com `clip-path: inset(0 100% 0 0 → 0)` dá a varredura; `view-transition-name` num botão o anima à parte. `mix-blend-mode: normal` nos snapshots evita o crossfade padrão.
 - html/template escapa apóstrofos como `&#39;` no texto: testes que procuram frases em inglês com "isn't" precisam de outra frase ou da forma escapada.
+- `data-cursor` no `<html>` é a preferência: o elemento do cursor usa `data-cursor-el`. Um `querySelector("[data-cursor]")` pegava o `<html>` e transladava a página inteira.
 - `cursor: url()` pisca ao navegar: o Chromium troca cursor de imagem pelo padrão enquanto a página carrega (`is_loading_`) e só recoloca o da página nova quando o mouse se mexe. Cursor por elemento com `cursor: none` não sofre disso. Chromium computa `cursor: text` (não `auto`) em `<input>`.
 - Elemento `position: fixed` nunca fica acima do top layer (diálogos, popovers): para isso ele precisa ser popover, e o último a abrir fica por cima, daí o `raise()` do cursor a cada `toggle`/`showModal`.
+- Playwright sem JavaScript: clicar num popover que entra com transição (`@starting-style`) fica em "element is not stable"; esperar ~300 ms antes do clique.
 - Popover aninhado (invocador dentro de outro popover) não fecha o pai ao abrir; fechar o pai fecha o filho. `@starting-style` dá a animação de entrada.
 - Playwright fora de `e2e/`: `require("C:/.../e2e/node_modules/@playwright/test")` num `.cjs` no scratchpad serve para capturas avulsas (prévias ampliadas com `deviceScaleFactor`).
 - Frases do script vão em `data-i18n` (JSON no atributo): um `<script type="application/json">` seria escapado como texto pelo html/template e quebraria.

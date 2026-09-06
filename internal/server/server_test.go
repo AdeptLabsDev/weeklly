@@ -394,6 +394,15 @@ func TestSecurityHeadersOnEveryResponse(t *testing.T) {
 func TestStaticAssets(t *testing.T) {
 	a := newApp(t, false)
 
+	// O favicon é o esquilo (mascote) em SVG, com PNG para o Safari e o iPhone.
+	for _, name := range []string{"favicon-32.png", "apple-touch-icon.png"} {
+		if r := a.get("/static/" + name); r.status != http.StatusOK || !strings.HasPrefix(r.header.Get("Content-Type"), "image/png") {
+			t.Errorf("%s: status %d, type %q", name, r.status, r.header.Get("Content-Type"))
+		}
+	}
+	if r := a.get("/"); !strings.Contains(r.body, `rel="apple-touch-icon"`) || !strings.Contains(r.body, `favicon-32.png`) {
+		t.Error("layout sem os ícones PNG")
+	}
 	r := a.get("/static/favicon.svg")
 	if r.status != http.StatusOK || !strings.HasPrefix(r.header.Get("Content-Type"), "image/svg+xml") {
 		t.Errorf("favicon: status %d, type %q", r.status, r.header.Get("Content-Type"))

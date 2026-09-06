@@ -237,6 +237,7 @@ func TestTasksLiveInsideTheirDay(t *testing.T) {
 	if _, err := s.MoveTask(ctx, bob.ID, leitura.ID, week.Monday, 0); !errors.Is(err, ErrNotFound) {
 		t.Errorf("mover tarefa alheia: %v", err)
 	}
+
 	if _, err := s.MoveTask(ctx, alice.ID, leitura.ID, week.Weekday(7), 0); !errors.Is(err, ErrNotFound) {
 		t.Errorf("mover para dia 7: %v", err)
 	}
@@ -262,6 +263,30 @@ func TestTasksLiveInsideTheirDay(t *testing.T) {
 	}
 	if got, _ := s.Task(ctx, alice.ID, feira.ID); got.Title != "Feira" {
 		t.Errorf("Task = %+v", got)
+	}
+
+	// Duplicar: a cópia entra logo abaixo, com título e horário, sem "feita".
+	if _, err := s.UpdateTask(ctx, alice.ID, leitura.ID, TaskPatch{Time: ptr("08:15"), Done: ptr(true)}); err != nil {
+		t.Fatal(err)
+	}
+	copyTask, err := s.DuplicateTask(ctx, alice.ID, leitura.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if copyTask.ID == leitura.ID || copyTask.Title != "Leitura" || copyTask.Time != "08:15" || copyTask.Done || copyTask.Position != 1 || copyTask.Weekday != week.Monday {
+		t.Errorf("cópia = %+v", copyTask)
+	}
+	if got := titles(week.Monday); strings.Join(got, ",") != "Leitura,Leitura,Terceira" {
+		t.Errorf("segunda depois de duplicar = %v", got)
+	}
+	if stored, _ := s.Task(ctx, alice.ID, copyTask.ID); stored != copyTask {
+		t.Errorf("cópia lida = %+v, devolvida = %+v", stored, copyTask)
+	}
+	if _, err := s.DuplicateTask(ctx, bob.ID, leitura.ID); !errors.Is(err, ErrNotFound) {
+		t.Errorf("duplicar tarefa alheia: %v", err)
+	}
+	if _, err := s.DuplicateTask(ctx, alice.ID, "nao-existe-aqui-00"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("duplicar inexistente: %v", err)
 	}
 }
 
@@ -374,3 +399,5 @@ func TestSessionsAndGoogleLinking(t *testing.T) {
 		t.Errorf("DeleteExpiredSessions = %d, %v", n, err)
 	}
 }
+
+func ptr[T any](v T) *T { return &v }

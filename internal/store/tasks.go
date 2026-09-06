@@ -243,3 +243,49 @@ func scanTask(row scanner) (week.Task, error) {
 	t.Done = done == 1
 	return t, nil
 }
+
+// DuplicateTask cria uma cópia da tarefa logo abaixo dela, no mesmo dia, com
+// o mesmo título e horário e sem o "feita": uma cópia é um a fazer novo.
+func (s *Store) DuplicateTask(ctx context.Context, userID, taskID string) (t week.Task, err error) {
+	if !ids.Valid(taskID) {
+		return week.Task{}, ErrNotFound
+	}
+	tx, err := s.writer.BeginTx(ctx, nil)
+	if err != nil {
+		return week.Task{}, err
+	}
+	defer func() {
+		if err != nil {
+			err = errors.Join(err, tx.Rollback())
+		}
+	}()
+
+	var weekID, title string
+	var at sql.NullString
+	var day, position, count int
+	err = tx.QueryRowContext(ctx, `
+		SELECT week_id, weekday, position, title, time,
+		       (SELECT count(*) FROM tasks AS d WHERE d.week_id = tasks.week_id AND d.weekday = tasks.weekday)
+		  FROM tasks WHERE `+ownedTask, taskID, userID).Scan(&weekID, &day, &position, &title, &at, &count)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return week.Task{}, ErrNotFound
+		}
+		return week.Task{}, err
+	}
+	if count >= week.MaxTasksPerDay {
+		return week.Task{}, week.ErrDayFull
+	}
+	if _, err = tx.ExecContext(ctx,
+		`UPDATE tasks SET position = position + 1 WHERE week_id = ? AND weekday = ? AND position > ?`,
+		weekID, day, position); err != nil {
+		return week.Task{}, fmt.Errorf("abrindo espaço: %w", err)
+	}
+	t = week.Task{ID: ids.New(), Weekday: week.Weekday(day), Position: position + 1, Title: title, Time: at.String}
+	if _, err = tx.ExecContext(ctx,
+		`INSERT INTO tasks (id, week_id, weekday, position, title, time) VALUES (?, ?, ?, ?, ?, ?)`,
+		t.ID, weekID, day, t.Position, title, at); err != nil {
+		return week.Task{}, fmt.Errorf("duplicando tarefa: %w", err)
+	}
+	return t, tx.Commit()
+}

@@ -1,0 +1,28 @@
+Use case: ads-marketing
+Crie uma única imagem editorial de apresentação da weeklly para um post de redes sociais em português brasileiro, vertical, proporção 4:5, idealmente 1080 × 1350 px. Entregue a arte final, sem moldura de aparelho e sem comentários dentro da imagem.
+
+Referência: a captura da landing anexada é referência visual da marca, não é uma imagem para apenas recortar. Reinterprete sua composição para o post mantendo a tipografia arredondada, a silhueta do esquilo, o fundo pontilhado, os tons e a contenção visual. A imagem deve explicar em poucos segundos que weeklly é um planejador semanal online.
+
+Estilo obrigatório: design gráfico digital 2D, limpo, acolhedor, organizado e sóbrio. Fundo quase preto #0a0a0a com uma malha regular de pontos brancos minúsculos a aproximadamente 9% de opacidade, espaçados uniformemente, como no site. Superfícies #171717, bordas finas #2e2e2e, títulos #ededed e texto secundário #a1a1a1. Única cor cromática: azul-pervinca #727cf5, reservada ao esquilo, a um pequeno check e ao CTA. Um halo muito discreto atrás do esquilo é permitido; o resto tem cores planas. Títulos com aparência de Nunito ExtraBold 800: sans-serif arredondada, amigável, compacta, sem serifa. Texto de apoio em sans-serif de sistema, limpo e legível. Nenhum título inteiro em caixa alta.
+
+Composição: margens de segurança de 72 px no tamanho ideal. No alto à esquerda, assinatura textual pequena e discreta "weeklly", grafia exata w-e-e-k-l-l-y. Não invente um novo logotipo. Abaixo, título grande em duas linhas e explicação curta, alinhados à esquerda. À direita desse conjunto, uma silhueta plana de esquilo sentado em perfil, olhando para a esquerda, com cauda grande curvada para cima sobre as costas, azul-pervinca sólido, reconhecível como a silhueta na referência; sem rosto cartoon, sem olhos, sem pelo, sem volume 3D. O esquilo ocupa aproximadamente um quinto da largura e não invade as palavras.
+
+Na região central, represente uma semana simplificada em UMA faixa horizontal de exatamente SETE cartões iguais, com o mesmo tamanho e importância, todos inteiramente visíveis. Cartões #171717 com borda #2e2e2e, cantos arredondados e sombras discretas. Cada cartão tem um único rótulo de dia no topo, nesta ordem exata: "seg", "ter", "qua", "qui", "sex", "sáb", "dom". No interior, use duas ou três barras curtas cinza com pequenos círculos de checklist; um único círculo pode estar marcado em azul-pervinca. Barras são sinais gráficos de tarefas, não texto minúsculo. Não desenhe tarefas com palavras. Não inclua datas, números de calendário, horas ou meses. Esta é uma ilustração explicativa do quadro, não uma captura literal da interface.
+
+Abaixo da semana, três benefícios em linhas bem legíveis, com pequenos checks simples, sem caixas individuais. Termine com uma única chamada em cápsula azul-pervinca, com texto branco grande e semibold. Use espaço negativo generoso e hierarquia clara: título, definição, quadro, benefícios, chamada. Equilibre as áreas para ocupar bem a altura, sem aparência de screenshot longa.
+
+Texto exato, sem acrescentar nenhum outro:
+Assinatura: "weeklly"
+Título: "Sua semana,"
+         "em um só lugar."
+Definição em duas linhas: "Um planejador semanal online"
+                        "para organizar seus dias."
+Dias: "seg" "ter" "qua" "qui" "sex" "sáb" "dom"
+Benefício 1: "Grátis e sem cadastro"
+Benefício 2: "De segunda a domingo, sem datas fixas"
+Benefício 3: "Suas tarefas salvas automaticamente"
+Chamada: "Criar minha semana"
+
+No tamanho ideal, título de aproximadamente 72 px, definição e benefícios entre 30 e 34 px, dias com pelo menos 24 px, chamada de 32 px semibold. Ajuste a composição antes de diminuir as letras. Português com acentos corretos e nenhuma palavra cortada.
+
+Evitar: fotografias, pessoas, 3D, texturas de papel, grão, neon, brilho intenso, degradês decorativos, vidro, amarelo, verde, laranja, rosa, mascote marrom, coruja, um novo personagem, adesivos, confetes, emojis, calendários mensais, seis ou oito dias, fim de semana menor, métricas, avaliações, preços, promessas de IA, app de celular disponível, URLs, QR codes e marcas-d'água. Não copiar elementos da Duolingo. Use apenas as afirmações de produto e os textos definidos acima.

@@ -1,0 +1,24 @@
+{{define "content"}}
+{{template "public-header" .}}
+<main id="main" class="landing-main landing-width faq-main" tabindex="-1">
+  <section class="faq" aria-labelledby="faq-heading">
+    <header class="faq-intro">
+      <h1 id="faq-heading">{{.L.T "faq.heading"}}</h1>
+      <p>{{.L.T "faq.lead"}}</p>
+    </header>
+    {{/* Um <details> por pergunta, todos no mesmo grupo (name): abrir uma
+         fecha a anterior, sem script. */}}
+    <div class="landing-questions">
+      {{range .SEO.Questions}}
+      <details name="faq"><summary>{{.Question}}</summary><p>{{.Answer}}</p></details>
+      {{end}}
+    </div>
+    <aside class="faq-more" aria-labelledby="faq-more-heading">
+      <h2 id="faq-more-heading">{{.L.T "faq.more.heading"}}</h2>
+      <p>{{.L.T "faq.more.body"}}</p>
+      <a class="btn btn-primary landing-cta" href="/semanas/nova?lang={{.L.Lang}}">{{.L.T "landing.create"}}</a>
+    </aside>
+  </section>
+</main>
+{{template "public-footer" .}}
+{{end}}
