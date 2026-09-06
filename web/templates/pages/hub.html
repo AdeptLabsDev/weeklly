@@ -1,8 +1,8 @@
 {{define "content"}}
 <main class="page">
   <div class="page-head">
-    <h1 class="page-title">Suas semanas</h1>
-    {{if .Data.Weeks}}{{template "order-toggle" .Data.Order}}{{end}}
+    <h1 class="page-title">{{.L.T "hub.title"}}</h1>
+    {{if .Data.Weeks}}{{template "order-toggle" .}}{{end}}
   </div>
   {{if .Data.Weeks}}
   <ul class="hub-list" data-week-list>
@@ -12,9 +12,9 @@
   </ul>
   {{else}}
   <div class="empty">
-    <p class="page-lead">Você ainda não tem uma semana.</p>
-    <p class="empty-body">Crie uma, dê um nome e escreva as tarefas de cada dia. Ela fica guardada, e você volta quando quiser.</p>
-    <a class="btn btn-primary" href="/semanas/nova" data-open-dialog="new-week">Criar a primeira semana</a>
+    <p class="page-lead">{{.L.T "hub.emptyLead"}}</p>
+    <p class="empty-body">{{.L.T "hub.emptyBody"}}</p>
+    <a class="btn btn-primary" href="/semanas/nova" data-open-dialog="new-week">{{.L.T "hub.createFirst"}}</a>
   </div>
   {{end}}
 </main>

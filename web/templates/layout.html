@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR" data-theme="{{.Theme}}">
+<html lang="{{.L.Lang}}" data-theme="{{.Theme}}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,12 +10,13 @@
   <link rel="preload" href="{{asset "fonts/nunito.woff2"}}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{asset "app.css"}}">
 </head>
-<body class="{{.BodyClass}}">
+<body class="{{.BodyClass}}" data-i18n="{{.L.ClientJSON}}">
 {{template "nav" .}}
 {{block "content" .}}{{end}}
 {{template "week-dialog" (dict "ID" "new-week" "Form" .NewWeek)}}
 {{if .Rename}}{{template "week-dialog" (dict "ID" "rename-week" "Form" .Rename)}}{{end}}
 {{if .Delete}}{{template "delete-dialog" .Delete}}{{end}}
+{{template "cursor"}}
 <script type="module" src="{{asset "app.js"}}"></script>
 </body>
 </html>

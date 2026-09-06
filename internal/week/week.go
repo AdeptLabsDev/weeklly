@@ -32,12 +32,6 @@ const (
 	Sunday
 )
 
-var (
-	names      = [Days]string{"Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"}
-	longNames  = [Days]string{"segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"}
-	shortNames = [Days]string{"seg", "ter", "qua", "qui", "sex", "sáb", "dom"}
-)
-
 // All devolve os sete dias em ordem.
 func All() [Days]Weekday {
 	var out [Days]Weekday
@@ -49,22 +43,6 @@ func All() [Days]Weekday {
 
 // Valid informa se d está entre segunda e domingo.
 func (d Weekday) Valid() bool { return d >= Monday && d <= Sunday }
-
-// Name devolve o nome curto com inicial maiúscula: "Segunda", "Sábado".
-func (d Weekday) Name() string { return pick(names, d) }
-
-// LongName devolve o nome completo em minúsculas: "segunda-feira", "sábado".
-func (d Weekday) LongName() string { return pick(longNames, d) }
-
-// Short devolve a abreviação de três letras: "seg", "sáb".
-func (d Weekday) Short() string { return pick(shortNames, d) }
-
-func pick(table [Days]string, d Weekday) string {
-	if !d.Valid() {
-		return ""
-	}
-	return table[d]
-}
 
 // FromTime converte a convenção do pacote time (domingo = 0) para a do
 // produto (segunda = 0).
@@ -98,11 +76,17 @@ type Task struct {
 // MaxTitleLength é o limite de caracteres (runas) do título de uma tarefa.
 const MaxTitleLength = 200
 
-// Erros de validação de tarefa, com texto pronto para a interface.
+// MaxTasksPerDay é o limite de tarefas num dia. Um plano com mais que isso
+// não é um plano.
+const MaxTasksPerDay = 100
+
+// Erros de validação de tarefa. O texto para a interface vem do pacote i18n;
+// estes são identificadores.
 var (
-	ErrEmptyTitle   = errors.New("escreva o que precisa ser feito")
-	ErrTitleTooLong = fmt.Errorf("a tarefa pode ter no máximo %d caracteres", MaxTitleLength)
-	ErrInvalidTime  = errors.New("use um horário como 09:30")
+	ErrEmptyTitle   = errors.New("título vazio")
+	ErrTitleTooLong = fmt.Errorf("título com mais de %d caracteres", MaxTitleLength)
+	ErrInvalidTime  = errors.New("horário inválido")
+	ErrDayFull      = fmt.Errorf("dia com mais de %d tarefas", MaxTasksPerDay)
 )
 
 // CleanTitle normaliza e valida o título de uma tarefa, com as mesmas regras
@@ -145,11 +129,11 @@ func CleanTime(raw string) (string, error) {
 // MaxNameLength é o limite de caracteres (runas) do nome de uma semana.
 const MaxNameLength = 60
 
-// Erros de validação do nome, com texto pronto para a interface.
+// Erros de validação do nome. O texto para a interface vem do pacote i18n.
 var (
-	ErrEmptyName   = errors.New("dê um nome para a semana")
-	ErrNameTooLong = fmt.Errorf("o nome pode ter no máximo %d caracteres", MaxNameLength)
-	ErrInvalidName = errors.New("o nome tem caracteres que não podem ser usados")
+	ErrEmptyName   = errors.New("nome vazio")
+	ErrNameTooLong = fmt.Errorf("nome com mais de %d caracteres", MaxNameLength)
+	ErrInvalidName = errors.New("nome com caracteres inválidos")
 )
 
 // CleanName normaliza e valida o nome de uma semana: remove espaços nas

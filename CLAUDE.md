@@ -27,7 +27,7 @@ Go com biblioteca padrão (net/http, html/template, slog, embed) · SQLite WAL v
 - Invariantes do produto vivem no banco (CHECK, gatilhos) e em `internal/week`, não só no handler.
 - Segurança: headers em `internal/server/middleware.go`; toda rota nova herda. Sem segredos no repositório.
 - Testes acompanham o código: datas, schema, handlers e headers. `task check` verde antes de qualquer entrega.
-- Interface em português do Brasil. Identificadores em inglês, comentários em português.
+- Interface em português do Brasil e inglês: todo texto visível vem de `internal/i18n` (chave nos dois catálogos, nunca literal em template, handler ou script). Identificadores em inglês, comentários em português.
 - Design: tokens só em `web/styles/app.css` (`@theme`, com o tema claro em `:root[data-theme="light"]`). Componentes em CSS com classes semânticas; utilitários do Tailwind para layout pontual. Nenhuma cor fora dos tokens.
 - Toda ação de tarefa e de semana é um formulário que funciona sem script; o script pede JSON no mesmo POST e recebe a parcial renderizada pelo servidor. Markup só nos templates.
 

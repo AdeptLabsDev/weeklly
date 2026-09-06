@@ -33,6 +33,13 @@ Só tópicos. `[x]` feito, `[ ]` não feito. Detalhes em [ROADMAP.md](ROADMAP.md
 - [x] Troca de tema varrendo da esquerda para a direita, ícone girando
 - [x] Recentes/A–Z com pílula deslizando e lista animada
 - [x] Logo leva ao hub
+- [x] Menu de configurações na barra
+- [x] Idioma: português e inglês, catálogo com teste
+- [x] Desfazer e refazer nas ações de tarefa (botões e atalhos)
+- [x] Idioma em painel próprio ao lado do menu (pronto para mais idiomas)
+- [x] Cursor próprio: seta e clique, sem piscar ao navegar
+- [ ] Outras configurações no menu
+- [ ] Decisão: cor do cursor
 - [x] Nunito nos papéis de exibição, fonte do sistema no resto
 - [ ] Decisão: cor de destaque
 - [ ] Primeiro push com CI verde

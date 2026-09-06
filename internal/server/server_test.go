@@ -424,23 +424,6 @@ func TestStaticAssets(t *testing.T) {
 	}
 }
 
-func TestUpdatedLabel(t *testing.T) {
-	loc, _ := time.LoadLocation("America/Sao_Paulo")
-	now := time.Date(2026, time.September, 9, 15, 0, 0, 0, time.UTC) // 12h em São Paulo
-	cases := map[time.Time]string{
-		now.Add(-time.Hour):                                       "editada hoje",
-		now.Add(-13 * time.Hour):                                  "editada ontem",
-		now.Add(-3 * 24 * time.Hour):                              "editada há 3 dias",
-		time.Date(2026, time.August, 12, 12, 0, 0, 0, time.UTC):   "editada em 12 de agosto",
-		time.Date(2025, time.December, 31, 12, 0, 0, 0, time.UTC): "editada em 31 de dezembro de 2025",
-	}
-	for at, want := range cases {
-		if got := updatedLabel(at, now, loc); got != want {
-			t.Errorf("updatedLabel(%s) = %q, quero %q", at, got, want)
-		}
-	}
-}
-
 func TestRecovererTurnsPanicInto500(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	h := recoverer(logger)(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {

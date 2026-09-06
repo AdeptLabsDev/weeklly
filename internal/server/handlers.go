@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/AdeptLabsDev/weeklly/internal/i18n"
 	"github.com/AdeptLabsDev/weeklly/internal/week"
 )
 
@@ -44,8 +45,9 @@ func (s *Server) renderHub(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
+	l := s.locale(r)
 	s.render(w, r, http.StatusOK, "hub", page{
-		Title: "Suas semanas · weeklly",
+		Title: s.title(l, l.T("hub.title")),
 		Nav:   nav,
 		Data:  hubView{Weeks: nav.Weeks, Order: nav.Order},
 	})
@@ -54,20 +56,21 @@ func (s *Server) renderHub(w http.ResponseWriter, r *http.Request) {
 // handleNewWeekPage é a versão em página do diálogo "Nova semana": funciona
 // sem JavaScript e é o destino dos links que o script transforma em diálogo.
 func (s *Server) handleNewWeekPage(w http.ResponseWriter, r *http.Request) {
-	s.renderForm(w, r, http.StatusOK, newWeekForm())
+	s.renderForm(w, r, http.StatusOK, newWeekForm(s.locale(r)))
 }
 
 // handleCreateWeek cria a semana e abre o quadro. Um visitante sem sessão
 // ganha uma aqui: é o primeiro momento em que há algo dele para guardar.
 func (s *Server) handleCreateWeek(w http.ResponseWriter, r *http.Request) {
+	l := s.locale(r)
 	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
 	if err := r.ParseForm(); err != nil {
-		s.renderForm(w, r, http.StatusBadRequest, withError(newWeekForm(), "", "Não foi possível ler o formulário. Tente de novo."))
+		s.renderForm(w, r, http.StatusBadRequest, withError(newWeekForm(l), "", l.T("form.readError")))
 		return
 	}
 	raw := r.PostFormValue("name")
 	if _, err := week.CleanName(raw); err != nil {
-		s.renderForm(w, r, http.StatusUnprocessableEntity, withError(newWeekForm(), raw, capitalize(err.Error())+"."))
+		s.renderForm(w, r, http.StatusUnprocessableEntity, withError(newWeekForm(l), raw, l.Error(err)))
 		return
 	}
 
@@ -108,14 +111,15 @@ func (s *Server) handleBoard(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
-	rename := renameForm(wk)
+	l := s.locale(r)
+	rename := renameForm(l, wk)
 	s.render(w, r, http.StatusOK, "board", page{
-		Title:     wk.Name + " · weeklly",
+		Title:     s.title(l, wk.Name),
 		BodyClass: "is-board",
 		Nav:       nav,
-		Data:      newBoardView(wk, s.today()),
+		Data:      newBoardView(l, wk, s.today()),
 		Rename:    &rename,
-		Delete:    &deleteView{Action: weekURL(wk.ID) + "/excluir", Name: wk.Name, Cancel: weekURL(wk.ID)},
+		Delete:    &deleteView{L: l, Action: weekURL(wk.ID) + "/excluir", Name: wk.Name, Cancel: weekURL(wk.ID)},
 	})
 }
 
@@ -136,10 +140,11 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 
 // handleNotFound é a página 404, com a voz do produto e os mesmos headers.
 func (s *Server) handleNotFound(w http.ResponseWriter, r *http.Request) {
+	l := s.locale(r)
 	s.renderMessage(w, r, http.StatusNotFound, messageView{
-		Heading:  "Isso não está aqui",
-		Body:     "O endereço não existe, ou a semana não é sua. Volte para as suas semanas.",
-		LinkText: "Suas semanas",
+		Heading:  l.T("notFound.heading"),
+		Body:     l.T("notFound.body"),
+		LinkText: l.T("notFound.link"),
 		LinkURL:  "/semanas",
 	})
 }
@@ -151,7 +156,7 @@ func (s *Server) renderMessage(w http.ResponseWriter, r *http.Request, status in
 		nav = navView{}
 	}
 	s.render(w, r, status, "message", page{
-		Title: m.Heading + " · weeklly",
+		Title: s.title(s.locale(r), m.Heading),
 		Nav:   nav,
 		Data:  m,
 	})
@@ -163,14 +168,24 @@ func (s *Server) today() week.Weekday {
 	return week.Today(s.now(), s.opts.Config.Timezone)
 }
 
-// render completa a página com o que toda página tem (tema, diálogo de nova
-// semana) e executa o template; erro vira 500.
+// title monta o título da aba: "Nome · weeklly".
+func (s *Server) title(l i18n.Locale, name string) string {
+	return name + " · " + l.T("app.name")
+}
+
+// render completa a página com o que toda página tem (tema, idioma, diálogo
+// de nova semana) e executa o template; erro vira 500.
 func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name string, p page) {
 	if p.Theme == "" {
 		p.Theme = themeFrom(r)
 	}
+	p.Cursor = cursorFrom(r)
+	p.Accent = accentFrom(r)
+	if p.L.IsZero() {
+		p.L = s.locale(r)
+	}
 	if p.NewWeek.Action == "" {
-		p.NewWeek = newWeekForm()
+		p.NewWeek = newWeekForm(p.L)
 	}
 	if err := s.views.render(w, status, name, p); err != nil {
 		s.serverError(w, r, err)
@@ -189,15 +204,3 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 }
 
 func weekURL(id string) string { return "/semana/" + id }
-
-// capitalize põe a primeira letra em maiúscula, para erros virarem frases.
-func capitalize(s string) string {
-	if s == "" {
-		return s
-	}
-	r := []rune(s)
-	if r[0] >= 'a' && r[0] <= 'z' {
-		r[0] -= 'a' - 'A'
-	}
-	return string(r)
-}

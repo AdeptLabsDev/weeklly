@@ -224,6 +224,27 @@ Tipografia: Nunito (variável, subconjunto latin, servida do próprio domínio) 
 
 **Consequência.** Nova rota `POST /tarefas/{id}/mover` (`weekday`, `position`), com `MoveTask` no banco fechando e abrindo espaço nas posições. Com captura de ponteiro na faixa, o clique chega à própria faixa: o toque em área vazia é tratado no `pointerup`, guardando o alvo do `pointerdown`.
 
+## D21 — Dois idiomas, configurações rápidas e histórico de desfazer (2026-09-06)
+
+**Escolha.**
+- Todo texto da interface vem de `internal/i18n`: catálogos em português do Brasil e inglês como mapas Go, com um teste que exige as mesmas chaves e o mesmo número de argumentos nos dois. Isso inclui nomes dos dias e meses, rótulos de data ("editada há 3 dias"), erros de domínio (o pacote `week` passou a ter erros como identificadores, sem texto de interface), páginas de login e as frases do script, que chegam ao navegador num atributo `data-i18n` do body.
+- O idioma é escolhido no menu de configurações (botão entre a casinha e "Nova semana", um popover sem página própria), guardado em cookie. Na primeira visita, o `Accept-Language` do navegador decide; o padrão é português. A troca recarrega a página, porque tudo muda.
+- Desfazer e refazer ficam na linha de "Hoje é...", desktop e celular, com Ctrl+Z, Ctrl+Shift+Z e Ctrl+Y. O histórico é por aba, em memória: cada ação de tarefa (adicionar, editar, concluir, mover, excluir) guarda sua inversa. Desfazer uma exclusão recria a tarefa com o mesmo texto, horário, estado e posição; como o id muda, o registro se atualiza para o refazer.
+
+**Razão.** Pedidos do Miguel. Catálogo em Go, sem biblioteca, mantém a stack (D3, D4) e faz o compilador e o teste vigiarem as traduções. Histórico no cliente é o padrão de editores (por aba, some ao recarregar) e não exige tabela de eventos no servidor; se um dia houver várias abas ou dispositivos editando junto, o caminho é o histórico no servidor.
+
+**Consequência.** Controle segmentado genérico (`.segmented`) usado pela ordem das semanas e pelo idioma. `POST /idioma`. `internal/week` sem nomes de dias.
+
+## D22 — Cursor do produto como elemento da página, e painel de idioma (2026-09-06)
+
+**Escolha.**
+- O site tem cursor próprio: uma seta de contorno com cantos arredondados que, enquanto o botão principal está pressionado, encolhe de leve e ganha dois arcos na ponta (referência visual do Miguel). É um elemento da página (`partials/cursor.html`), não uma imagem em `cursor: url()`: com script e ponteiro fino, o `<html>` recebe `has-cursor`, o cursor do sistema some e o elemento segue o ponteiro por `transform`. Ele é um popover manual, então vive no top layer e o script o promove de novo sempre que um diálogo ou menu abre, para nunca ficar por baixo. Sobre campos de texto, áreas de escrita e barras de rolagem ele some e o cursor do sistema volta (o I-beam continua sendo o sinal certo). A posição atravessa a navegação pela `sessionStorage`, então a página nova já abre com a seta no mesmo lugar. No toque e sem script, valem os cursores do sistema. Cores por token (`--color-cursor`, `--color-cursor-fill`), monocromáticas até a cor de destaque entrar.
+- O idioma nas configurações é uma linha "Idioma · Português ⌄" que abre um painel próprio, sem esticar o menu: um popover aninhado no de configurações, posicionado pelo script ao lado da linha no desktop e abaixo do menu quando não cabe ao lado. A lista vem de `Locale.Languages()` (nome de cada idioma no próprio idioma, o atual marcado): um idioma novo entra no catálogo e aparece sozinho.
+
+**Razão.** A primeira versão usava `cursor: url()` com quatro SVGs, e piscava ao clicar em links e formulários. A causa está no Chromium, não no CSS: enquanto uma navegação carrega, o navegador substitui qualquer cursor de imagem pelo padrão (`is_loading_` em `RenderWidgetHostViewAura::UpdateCursorIfOverSelf`), e a página nova só recoloca o cursor dela quando o mouse se mexe. Com o cursor escondido (`cursor: none`) essa substituição não acontece, e o elemento da página reaparece onde estava. De quebra, os estados viram CSS de verdade (transições nos arcos, cor por token, mais estados no futuro) em vez de imagens fixas. O custo é o de todo cursor por elemento: um quadro de atraso em relação ao ponteiro do sistema, imperceptível parado e aceitável em movimento. O painel separado foi pedido pelo Miguel para escalar a vários idiomas sem pesar o menu.
+
+**Consequência.** `.segmented` fica só para a ordem das semanas. Ao trocar o tema, o cursor sai do retrato antigo e entra ao vivo no novo, para não aparecer congelado na varredura. O teste ponta a ponta confere `has-cursor`, o cursor computado (`none` na página, `text` nos campos), o elemento seguindo o ponteiro, o estado pressionado, o sumiço sobre campos e a posição depois de navegar; e o fluxo abrir painel → escolher idioma → recarregar.
+
 ## Pendentes para fases futuras
 
 - **Outras formas de entrar** depois do Google (Fase 3): passkeys via `go-webauthn` é a candidata.

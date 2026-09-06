@@ -35,7 +35,7 @@ func (s *Server) handleRenamePage(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	s.renderForm(w, r, http.StatusOK, renameForm(wk))
+	s.renderForm(w, r, http.StatusOK, renameForm(s.locale(r), wk))
 }
 
 // handleRename troca o nome da semana.
@@ -44,16 +44,17 @@ func (s *Server) handleRename(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	l := s.locale(r)
 	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
 	if err := r.ParseForm(); err != nil {
-		s.renderForm(w, r, http.StatusBadRequest, withError(renameForm(wk), "", "Não foi possível ler o formulário. Tente de novo."))
+		s.renderForm(w, r, http.StatusBadRequest, withError(renameForm(l, wk), "", l.T("form.readError")))
 		return
 	}
 	raw := r.PostFormValue("name")
 	err := s.opts.Store.RenameWeek(r.Context(), currentVisitor(r).user.ID, wk.ID, raw)
 	if err != nil {
 		if isNameError(err) {
-			s.renderForm(w, r, http.StatusUnprocessableEntity, withError(renameForm(wk), raw, capitalize(err.Error())+"."))
+			s.renderForm(w, r, http.StatusUnprocessableEntity, withError(renameForm(l, wk), raw, l.Error(err)))
 			return
 		}
 		s.serverError(w, r, err)
@@ -68,9 +69,10 @@ func (s *Server) handleDuplicate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	name := wk.Name + " (cópia)"
+	l := s.locale(r)
+	name := l.T("duplicate.suffix", wk.Name)
 	if _, err := week.CleanName(name); err != nil {
-		name = "Cópia de semana"
+		name = l.T("duplicate.fallback")
 	}
 	v := currentVisitor(r)
 	copyWeek, err := s.opts.Store.DuplicateWeek(r.Context(), v.user.ID, wk.ID, name)
@@ -96,10 +98,11 @@ func (s *Server) handleDeletePage(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
+	l := s.locale(r)
 	s.render(w, r, http.StatusOK, "confirm-delete", page{
-		Title: "Excluir " + wk.Name + " · weeklly",
+		Title: s.title(l, l.T("delete.heading", wk.Name)),
 		Nav:   nav,
-		Data:  deleteView{Action: weekURL(wk.ID) + "/excluir", Name: wk.Name, Cancel: weekURL(wk.ID)},
+		Data:  deleteView{L: l, Action: weekURL(wk.ID) + "/excluir", Name: wk.Name, Cancel: weekURL(wk.ID)},
 	})
 }
 
@@ -140,7 +143,7 @@ func (s *Server) renderForm(w http.ResponseWriter, r *http.Request, status int, 
 		return
 	}
 	s.render(w, r, status, "week-form", page{
-		Title: form.Heading + " · weeklly",
+		Title: s.title(form.L, form.Heading),
 		Nav:   nav,
 		Data:  form,
 	})

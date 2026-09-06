@@ -2,6 +2,16 @@
 
 Estado vivo do projeto. Limite: 200 linhas. Detalhe longo vai para `docs/topics/`.
 
+## Estado (2026-09-06, rodada 5)
+
+- Cursor próprio (D22): elemento `partials/cursor.html` (popover manual no top layer) seguindo o ponteiro, `html.has-cursor` esconde o do sistema; some sobre campos de texto e barras de rolagem; posição na `sessionStorage` atravessa navegações. Tokens `--color-cursor` e `--color-cursor-fill`. Cor pendente junto da cor de destaque.
+- Idioma nas configurações: linha "Idioma · Português ⌄" abre o popover `#language-menu` ao lado (ou abaixo, no celular), lista de `Locale.Languages()`: idioma novo = constante em `All` + `lang.<tag>` nos catálogos + `Parse`.
+
+## Estado (2026-09-06, rodada 4)
+
+- Dois idiomas (D21): `internal/i18n` com catálogos pt-BR e en, cookie `weeklly_lang`, `Accept-Language` na primeira visita. Menu de configurações na barra (idioma; mais opções depois). Desfazer/refazer na linha de "Hoje é...", por aba, com atalhos.
+- Miguel commitou tudo até a rodada 3 ("feat: fundação do projeto e núcleo da Fase 1").
+
 ## Estado (2026-09-06, rodada 3)
 
 - Movimento e mecânica (D20): tema varrendo com View Transitions, alça de arrasto para reordenar e mover tarefas entre dias (Alt+setas no teclado), clique em área vazia foca o campo, horário em texto com seletor leve, Recentes/A–Z animado sem recarregar, logo para o hub.
@@ -62,3 +72,9 @@ Estado vivo do projeto. Limite: 200 linhas. Detalhe longo vai para `docs/topics/
 - Placeholder "Semana padrão…" existe em todo formulário de semana: testes que checam "o nome antigo sumiu" precisam olhar o elemento certo, não a página inteira.
 - `setPointerCapture` na faixa faz o `click` ser entregue à faixa (alvo comum de down e up), não ao elemento sob o ponteiro. Cliques "parados" dentro da faixa são tratados no `pointerup` com o alvo guardado no `pointerdown`.
 - View Transitions: `::view-transition-new(root)` com `clip-path: inset(0 100% 0 0 → 0)` dá a varredura; `view-transition-name` num botão o anima à parte. `mix-blend-mode: normal` nos snapshots evita o crossfade padrão.
+- html/template escapa apóstrofos como `&#39;` no texto: testes que procuram frases em inglês com "isn't" precisam de outra frase ou da forma escapada.
+- `cursor: url()` pisca ao navegar: o Chromium troca cursor de imagem pelo padrão enquanto a página carrega (`is_loading_`) e só recoloca o da página nova quando o mouse se mexe. Cursor por elemento com `cursor: none` não sofre disso. Chromium computa `cursor: text` (não `auto`) em `<input>`.
+- Elemento `position: fixed` nunca fica acima do top layer (diálogos, popovers): para isso ele precisa ser popover, e o último a abrir fica por cima, daí o `raise()` do cursor a cada `toggle`/`showModal`.
+- Popover aninhado (invocador dentro de outro popover) não fecha o pai ao abrir; fechar o pai fecha o filho. `@starting-style` dá a animação de entrada.
+- Playwright fora de `e2e/`: `require("C:/.../e2e/node_modules/@playwright/test")` num `.cjs` no scratchpad serve para capturas avulsas (prévias ampliadas com `deviceScaleFactor`).
+- Frases do script vão em `data-i18n` (JSON no atributo): um `<script type="application/json">` seria escapado como texto pelo html/template e quebraria.

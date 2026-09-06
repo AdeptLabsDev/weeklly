@@ -26,17 +26,17 @@ func (s *Server) handleAddTask(w http.ResponseWriter, r *http.Request) {
 	v := currentVisitor(r)
 	weekID := r.PathValue("id")
 	if !v.ok || !ids.Valid(weekID) {
-		s.taskError(w, r, http.StatusNotFound, "Essa semana não está aqui.")
+		s.taskError(w, r, http.StatusNotFound, s.locale(r).T("task.error.week"))
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
 	if err := r.ParseForm(); err != nil {
-		s.taskError(w, r, http.StatusBadRequest, "Não foi possível ler a tarefa.")
+		s.taskError(w, r, http.StatusBadRequest, s.locale(r).T("task.error.read"))
 		return
 	}
 	day, err := strconv.Atoi(r.PostFormValue("weekday"))
 	if err != nil || !week.Weekday(day).Valid() {
-		s.taskError(w, r, http.StatusBadRequest, "Dia da semana inválido.")
+		s.taskError(w, r, http.StatusBadRequest, s.locale(r).T("task.error.day"))
 		return
 	}
 
@@ -52,12 +52,12 @@ func (s *Server) handleAddTask(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleEditTask(w http.ResponseWriter, r *http.Request) {
 	v := currentVisitor(r)
 	if !v.ok {
-		s.taskError(w, r, http.StatusNotFound, "Essa tarefa não está aqui.")
+		s.taskError(w, r, http.StatusNotFound, s.locale(r).T("task.error.notHere"))
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
 	if err := r.ParseForm(); err != nil {
-		s.taskError(w, r, http.StatusBadRequest, "Não foi possível ler a tarefa.")
+		s.taskError(w, r, http.StatusBadRequest, s.locale(r).T("task.error.read"))
 		return
 	}
 	var patch store.TaskPatch
@@ -68,7 +68,7 @@ func (s *Server) handleEditTask(w http.ResponseWriter, r *http.Request) {
 		patch.Time = &at[0]
 	}
 	if patch.Title == nil && patch.Time == nil {
-		s.taskError(w, r, http.StatusBadRequest, "Nada para mudar.")
+		s.taskError(w, r, http.StatusBadRequest, s.locale(r).T("task.error.nothing"))
 		return
 	}
 	s.applyPatch(w, r, patch)
@@ -78,7 +78,7 @@ func (s *Server) handleEditTask(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleDoneTask(w http.ResponseWriter, r *http.Request) {
 	v := currentVisitor(r)
 	if !v.ok {
-		s.taskError(w, r, http.StatusNotFound, "Essa tarefa não está aqui.")
+		s.taskError(w, r, http.StatusNotFound, s.locale(r).T("task.error.notHere"))
 		return
 	}
 	done := r.FormValue("done") != "0"
@@ -99,22 +99,22 @@ func (s *Server) applyPatch(w http.ResponseWriter, r *http.Request, patch store.
 func (s *Server) handleMoveTask(w http.ResponseWriter, r *http.Request) {
 	v := currentVisitor(r)
 	if !v.ok {
-		s.taskError(w, r, http.StatusNotFound, "Essa tarefa não está aqui.")
+		s.taskError(w, r, http.StatusNotFound, s.locale(r).T("task.error.notHere"))
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
 	if err := r.ParseForm(); err != nil {
-		s.taskError(w, r, http.StatusBadRequest, "Não foi possível ler o pedido.")
+		s.taskError(w, r, http.StatusBadRequest, s.locale(r).T("task.error.read"))
 		return
 	}
 	day, err := strconv.Atoi(r.PostFormValue("weekday"))
 	if err != nil || !week.Weekday(day).Valid() {
-		s.taskError(w, r, http.StatusBadRequest, "Dia da semana inválido.")
+		s.taskError(w, r, http.StatusBadRequest, s.locale(r).T("task.error.day"))
 		return
 	}
 	position, err := strconv.Atoi(r.PostFormValue("position"))
 	if err != nil || position < 0 {
-		s.taskError(w, r, http.StatusBadRequest, "Posição inválida.")
+		s.taskError(w, r, http.StatusBadRequest, s.locale(r).T("task.error.position"))
 		return
 	}
 	t, err := s.opts.Store.MoveTask(r.Context(), v.user.ID, r.PathValue("id"), week.Weekday(day), position)
@@ -129,7 +129,7 @@ func (s *Server) handleMoveTask(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleDeleteTask(w http.ResponseWriter, r *http.Request) {
 	v := currentVisitor(r)
 	if !v.ok {
-		s.taskError(w, r, http.StatusNotFound, "Essa tarefa não está aqui.")
+		s.taskError(w, r, http.StatusNotFound, s.locale(r).T("task.error.notHere"))
 		return
 	}
 	if err := s.opts.Store.DeleteTask(r.Context(), v.user.ID, r.PathValue("id")); err != nil {
@@ -146,7 +146,7 @@ func (s *Server) handleDeleteTask(w http.ResponseWriter, r *http.Request) {
 // taskOK responde com a tarefa renderizada (JSON) ou volta para o quadro.
 func (s *Server) taskOK(w http.ResponseWriter, r *http.Request, status int, weekID string, t week.Task) {
 	if wantsJSON(r) {
-		html, err := s.views.partial("task-item", newTaskView(t))
+		html, err := s.views.partial("task-item", newTaskView(s.locale(r), t))
 		if err != nil {
 			s.serverError(w, r, err)
 			return
@@ -172,12 +172,10 @@ func (s *Server) taskOK(w http.ResponseWriter, r *http.Request, status int, week
 func (s *Server) taskFailure(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, store.ErrNotFound):
-		s.taskError(w, r, http.StatusNotFound, "Essa tarefa não está aqui.")
-	case errors.Is(err, store.ErrDayFull):
-		s.taskError(w, r, http.StatusUnprocessableEntity, capitalize(err.Error())+".")
-	case errors.Is(err, week.ErrEmptyTitle), errors.Is(err, week.ErrTitleTooLong),
+		s.taskError(w, r, http.StatusNotFound, s.locale(r).T("task.error.notHere"))
+	case errors.Is(err, week.ErrDayFull), errors.Is(err, week.ErrEmptyTitle), errors.Is(err, week.ErrTitleTooLong),
 		errors.Is(err, week.ErrInvalidTime), errors.Is(err, week.ErrInvalidName):
-		s.taskError(w, r, http.StatusUnprocessableEntity, capitalize(err.Error())+".")
+		s.taskError(w, r, http.StatusUnprocessableEntity, s.locale(r).Error(err))
 	default:
 		s.serverError(w, r, err)
 	}
@@ -189,10 +187,11 @@ func (s *Server) taskError(w http.ResponseWriter, r *http.Request, status int, m
 		writeJSON(w, status, map[string]string{"error": msg})
 		return
 	}
+	l := s.locale(r)
 	s.renderMessage(w, r, status, messageView{
-		Heading:  "Não deu para salvar",
+		Heading:  l.T("task.error.title"),
 		Body:     msg,
-		LinkText: "Voltar",
+		LinkText: l.T("task.error.back"),
 		LinkURL:  backTo(r),
 	})
 }

@@ -176,6 +176,106 @@ test("visitante cria semanas, tarefas, troca tema e ordem @shots", async ({ page
 
   await page.getByRole("link", { name: "Entrar com Google" }).click();
   await expect(page.getByRole("heading", { name: "Login ainda não configurado" })).toBeVisible();
+
+  // Configurações: idioma. A linha mostra o atual; abrir lista os outros.
+  // A troca recarrega a página em inglês e fica.
+  await page.getByRole("button", { name: "Configurações" }).click();
+  const settings = page.locator("#settings-menu");
+  await expect(settings).toBeVisible();
+  const languageRow = settings.getByRole("button", { name: /Idioma/ });
+  await expect(languageRow).toContainText("Português");
+  const languages = page.locator("#language-menu");
+  await expect(languages).toBeHidden();
+  await languageRow.click();
+  await expect(languages).toBeVisible();
+  await expect(settings).toBeVisible(); // o painel abre ao lado, sem fechar o menu
+  await expect(languages.getByRole("button", { name: "Português" })).toHaveAttribute("aria-current", "true");
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: `${shots}/${tag}-06-configuracoes.png` });
+  await languages.getByRole("button", { name: "English" }).click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.getByRole("heading", { name: "Sign-in isn't set up yet" })).toBeVisible();
+  await page.goto("/semanas");
+  await expect(page.getByRole("heading", { name: "Your weeks" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "New week" }).first()).toBeVisible();
+  await page.locator(".hub-item").first().click();
+  await expect(page.locator(".subtitle")).toContainText("Today is");
+  await page.screenshot({ path: `${shots}/${tag}-07-ingles.png` });
+  await page.getByRole("button", { name: "Settings" }).click();
+  await page.locator("#settings-menu").getByRole("button", { name: /Language/ }).click();
+  await page.locator("#language-menu").getByRole("button", { name: "Português" }).click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "pt-BR");
+});
+
+test("desfazer e refazer cobrem adicionar, concluir, editar, mover e excluir", async ({ page }) => {
+  await page.goto("/semanas/nova");
+  await page.locator("main").getByLabel("Nome da semana").fill("Semana com histórico");
+  await page.locator("main").getByRole("button", { name: "Criar semana" }).click();
+  await expect(page).toHaveURL(/\/semana\//);
+
+  const undo = page.getByRole("button", { name: "Desfazer" });
+  const redo = page.getByRole("button", { name: "Refazer" });
+  await expect(undo).toBeDisabled();
+  await expect(redo).toBeDisabled();
+
+  const today = Number(await page.locator(".card.is-today").getAttribute("data-weekday"));
+  const tasks = page.locator(`#dia-${today} .task`);
+
+  // Adicionar → desfazer some, refazer volta.
+  await addTask(page, today, "Primeira", "08:00");
+  await expect(undo).toBeEnabled();
+  await undo.click();
+  await expect(tasks).toHaveCount(0);
+  await expect(page.locator("[data-status]")).toContainText("Desfeito");
+  await expect(redo).toBeEnabled();
+  await redo.click();
+  await expect(tasks).toHaveCount(1);
+  await expect(tasks.first()).toContainText("Primeira");
+  await expect(tasks.first().locator("time")).toHaveText("08:00");
+
+  // Concluir → Ctrl+Z desmarca → Ctrl+Shift+Z marca.
+  await tasks.first().getByRole("checkbox").click();
+  await expect(tasks.first()).toHaveClass(/is-done/);
+  await page.locator("body").click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press("Control+z");
+  await expect(tasks.first()).not.toHaveClass(/is-done/);
+  await page.keyboard.press("Control+Shift+z");
+  await expect(tasks.first()).toHaveClass(/is-done/);
+
+  // Editar o título → desfazer volta ao anterior.
+  await tasks.first().getByRole("button", { name: /Editar: Primeira/ }).click();
+  await page.locator(".task-editor").fill("Primeira revisada");
+  await page.locator(".task-editor").press("Enter");
+  await expect(tasks.first()).toContainText("Primeira revisada");
+  await undo.click();
+  await expect(tasks.first()).toContainText("Primeira");
+  await expect(tasks.first()).not.toContainText("revisada");
+
+  // Mover pelo teclado → desfazer volta a posição.
+  await addTask(page, today, "Segunda");
+  await tasks.nth(1).locator(".task-title").focus();
+  await page.keyboard.press("Alt+ArrowUp");
+  await expect(tasks.first()).toContainText("Segunda");
+  await undo.click();
+  await expect(tasks.first()).toContainText("Primeira");
+  await expect(tasks.nth(1)).toContainText("Segunda");
+
+  // Excluir → desfazer recria no mesmo lugar, feita como estava.
+  await tasks.first().hover();
+  await tasks.first().getByRole("button", { name: /Excluir/ }).click();
+  await expect(tasks).toHaveCount(1);
+  await undo.click();
+  await expect(tasks).toHaveCount(2);
+  await expect(tasks.first()).toContainText("Primeira");
+  await expect(tasks.first()).toHaveClass(/is-done/);
+  await expect(tasks.first().locator("time")).toHaveText("08:00");
+
+  // Tudo isso está no servidor.
+  await page.reload();
+  await expect(page.locator(`#dia-${today} .task`)).toHaveCount(2);
+  await expect(page.locator(`#dia-${today} .task`).first()).toContainText("Primeira");
+  await expect(page.locator(`#dia-${today} .task`).first()).toHaveClass(/is-done/);
+  await expect(undo).toBeDisabled();
 });
 
 test("a faixa desliza com a roda e com o arrasto, e para onde a mão parou", async ({ page }, info) => {
@@ -215,6 +315,35 @@ test("a faixa desliza com a roda e com o arrasto, e para onde a mão parou", asy
   await board.focus();
   await page.keyboard.press("ArrowRight");
   await expect.poll(scrollLeft).toBeGreaterThan(afterDrag);
+
+  // O cursor é o do produto: o do sistema some e um elemento segue o
+  // ponteiro, com os arcos enquanto o botão está pressionado. Sobre campos
+  // de texto ele some e o I-beam do sistema volta.
+  const cursorOf = (selector: string) => page.locator(selector).first().evaluate((el) => getComputedStyle(el).cursor);
+  await expect(page.locator("html")).toHaveClass(/has-cursor/);
+  expect(await cursorOf(".card-head")).toBe("none");
+  expect(await cursorOf(".btn")).toBe("none");
+  expect(await cursorOf(".task-add-title")).toBe("text");
+  const cursor = page.locator("[data-cursor]");
+  await page.mouse.move(x, y);
+  await expect(cursor).toHaveClass(/is-visible/);
+  await expect(cursor).not.toHaveClass(/is-native/);
+  expect(await cursor.evaluate((el) => el.style.transform)).toBe(`translate(${x}px, ${y}px)`);
+  expect(await cursor.evaluate((el) => el.matches(":popover-open"))).toBe(true);
+  await page.mouse.down();
+  await expect(cursor).toHaveClass(/is-pressing/);
+  await page.mouse.up();
+  await expect(cursor).not.toHaveClass(/is-pressing/);
+  const field = page.locator(".task-add-title").first();
+  await field.hover();
+  await expect(cursor).toHaveClass(/is-native/);
+  await page.locator(".card-head").first().hover();
+  await expect(cursor).not.toHaveClass(/is-native/);
+
+  // A posição sobrevive à navegação: a página nova já mostra o cursor onde ele estava.
+  await page.getByRole("link", { name: /weeklly, suas semanas/ }).click();
+  await expect(page).toHaveURL(/\/semanas$/);
+  await expect(page.locator("[data-cursor]")).toHaveClass(/is-visible/);
 });
 
 test("arrastar pela alça reordena dentro do dia e move para outro dia", async ({ page }, info) => {

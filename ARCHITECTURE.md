@@ -9,7 +9,7 @@ Como o weeklly está organizado, como rodar e por que cada peça existe. As raz�
 | Servidor | Go 1.27, biblioteca padrão (`net/http`, `html/template`, `log/slog`, `embed`) | Um binário estático, escape contextual de HTML, CSRF nativo, compatibilidade por décadas (D6) |
 | Banco | SQLite em modo WAL via `modernc.org/sqlite` (Go puro) | Um arquivo, um processo, sem cgo nem toolchain C (D5, D7) |
 | CSS | Tailwind v4 pelo CLI standalone, sem Node no repositório. Tokens monocromáticos em `@theme`, tema claro por `data-theme` no `<html>` | Binário com versão e SHA-256 fixados (D3); paleta e temas em D17 |
-| JS | Um módulo ES nativo (`web/static/app.js`): diálogos, tema, faixa (centralizar hoje, roda, arrasto com inércia, teclado, paginador) e tarefas sem recarregar. Sem framework | D4, D11, D18 |
+| JS | Um módulo ES nativo (`web/static/app.js`): cursor do produto (elemento que segue o ponteiro), diálogos, tema, idioma, faixa (centralizar hoje, roda, arrasto com inércia, teclado, paginador), tarefas sem recarregar e histórico de desfazer. Sem framework | D4, D11, D18, D21, D22 |
 | Container | Multi-stage, imagem final distroless static, usuário 65532 | Sem shell, sem root, binário estático |
 
 ## Como rodar
@@ -58,12 +58,13 @@ Não há outros serviços: o banco é um arquivo. Em produção um proxy com TLS
 cmd/weeklly/                entrypoint: flags, config, boot do banco, servidor HTTP, shutdown gracioso
 internal/config/            leitura e validação do ambiente (WEEKLLY_*)
 internal/ids/               identificadores opacos (16 caracteres) para URLs e chaves
-internal/week/              modelo do produto: Week com nome, Weekday (segunda a domingo), hoje por fuso
+internal/week/              modelo do produto: Week com nome, Weekday (segunda a domingo), tarefas, hoje por fuso
+internal/i18n/              textos em pt-BR e en: catálogos, negociação de idioma, nomes de dias e meses, erros
 internal/auth/              login com o Google: OpenID Connect, PKCE, verificação do id_token, provedor falso para testes
 internal/store/             SQLite: pools, pragmas, migrações; usuários, semanas, tarefas, sessões
 internal/store/migrations/  SQL puro, numerado, aplicado no boot
 internal/server/            http.Handler: rotas, middlewares, sessão, login, templates, assets, view models
-web/templates/              layout.html, partials/ (barra, logo, formulário) e pages/*.html
+web/templates/              layout.html, partials/ (barra, logo, formulário, tarefa, cursor) e pages/*.html
 e2e/                        Playwright: testes ponta a ponta e capturas de tela (Node só aqui)
 web/styles/app.css          fonte do Tailwind: fontes, tokens (@theme), componentes
 web/static/                 fontes woff2 e favicon; app.css é gerado e fica fora do git
@@ -93,6 +94,7 @@ Rotas da Fase 0:
 | `POST /tarefas/{id}/editar`, `/concluir`, `/mover`, `/excluir` | Título e horário, feita ou não, posição e dia (`weekday`, `position`), apagar. Mesmo contrato JSON ou redirecionamento |
 | `POST /semanas/ordem` | Ordem da lista de semanas (`recent` ou `name`), guardada no usuário |
 | `POST /tema` | Tema (`dark` ou `light`) em cookie legível pelo script |
+| `POST /idioma` | Idioma (`pt-BR` ou `en`) em cookie; sem cookie vale o `Accept-Language` |
 | `GET /entrar/google` | Início do login: cookie curto com state, nonce e PKCE; redireciona ao Google. Sem credenciais, página explicando |
 | `GET /entrar/google/callback` | Retorno do Google: confere state, troca o código, verifica o `id_token`, liga ou funde a conta, abre a sessão |
 | `POST /sair` | Encerra a sessão deste navegador |

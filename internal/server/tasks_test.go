@@ -200,6 +200,62 @@ func TestWeekActions(t *testing.T) {
 	}
 }
 
+func TestLanguage(t *testing.T) {
+	a := newApp(t, false)
+
+	// Sem preferência: português.
+	if r := a.get("/"); !strings.Contains(r.body, `lang="pt-BR"`) || !strings.Contains(r.body, "Suas semanas") {
+		t.Error("padrão deveria ser português")
+	}
+
+	// Accept-Language decide a primeira visita.
+	req, _ := http.NewRequest(http.MethodGet, a.http.URL+"/", nil)
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9,pt;q=0.8")
+	resp, err := a.client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := read(t, resp)
+	if !strings.Contains(r.body, `lang="en"`) || !strings.Contains(r.body, "Your weeks") || !strings.Contains(r.body, "Sign in with Google") {
+		t.Error("Accept-Language: en não aplicado")
+	}
+
+	// A escolha nas configurações vence o Accept-Language e vale para tudo.
+	if r := a.post("/idioma", url.Values{"lang": {"en"}}); r.status != http.StatusSeeOther {
+		t.Errorf("idioma: %d", r.status)
+	}
+	location := a.createWeek("Semana padrão")
+	board := a.get(location)
+	for _, want := range []string{`lang="en"`, "Today is Wednesday.", "Monday", "New week", "Settings", `data-i18n=`, "Saved", "Nothing here yet",
+		// O seletor de idiomas lista todos, com o atual marcado.
+		`id="language-menu"`, `value="en" class="menu-option" lang="en" aria-current="true"`, `value="pt-BR" class="menu-option" lang="pt-BR">`} {
+		if !strings.Contains(board.body, want) {
+			t.Errorf("quadro em inglês sem %q", want)
+		}
+	}
+	if strings.Contains(board.body, "Nova semana") {
+		t.Error("texto em português sobrou no quadro em inglês")
+	}
+	if status, data := a.postJSON(location+"/tarefas", url.Values{"weekday": {"0"}, "title": {""}}); status != http.StatusUnprocessableEntity || data["error"] != "Write what needs to be done." {
+		t.Errorf("erro em inglês: %d %v", status, data)
+	}
+	// O apóstrofo vira &#39; no HTML; a checagem usa a frase do corpo.
+	if r := a.get("/nao-existe"); !strings.Contains(r.body, "Go back to your weeks") {
+		t.Error("404 em inglês")
+	}
+
+	// Volta para português; valor inválido também cai em português.
+	if r := a.post("/idioma", url.Values{"lang": {"klingon"}}); r.status != http.StatusSeeOther {
+		t.Errorf("idioma inválido: %d", r.status)
+	}
+	if r := a.get(location); !strings.Contains(r.body, "Hoje é quarta-feira.") || !strings.Contains(r.body, `lang="pt-BR" aria-current="true"`) {
+		t.Error("não voltou para português")
+	}
+	if status, _ := a.postJSON("/idioma", url.Values{"lang": {"en"}}); status != http.StatusNoContent {
+		t.Errorf("idioma via script: %d", status)
+	}
+}
+
 func TestThemeCookie(t *testing.T) {
 	a := newApp(t, false)
 	if r := a.get("/"); !strings.Contains(r.body, `data-theme="dark"`) {

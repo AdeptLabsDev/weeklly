@@ -9,25 +9,18 @@ import (
 	_ "time/tzdata"
 )
 
-func TestWeekdayOrderAndNames(t *testing.T) {
+func TestWeekdayOrder(t *testing.T) {
 	all := All()
-	if all[0] != Monday || all[Days-1] != Sunday {
+	if all[0] != Monday || all[Days-1] != Sunday || len(all) != 7 {
 		t.Fatalf("All() = %v", all)
 	}
-	want := []string{"Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"}
 	for i, d := range all {
-		if d.Name() != want[i] {
-			t.Errorf("Weekday(%d).Name() = %q, quero %q", i, d.Name(), want[i])
+		if int(d) != i || !d.Valid() {
+			t.Errorf("Weekday(%d) fora de ordem ou inválido", i)
 		}
-		if !d.Valid() || d.Short() == "" || d.LongName() == "" {
-			t.Errorf("Weekday(%d) incompleto", i)
-		}
-	}
-	if Saturday.LongName() != "sábado" || Monday.LongName() != "segunda-feira" || Sunday.Short() != "dom" {
-		t.Error("nomes longos ou curtos errados")
 	}
 	for _, bad := range []Weekday{-1, 7, 100} {
-		if bad.Valid() || bad.Name() != "" {
+		if bad.Valid() {
 			t.Errorf("Weekday(%d) deveria ser inválido", bad)
 		}
 	}
@@ -58,7 +51,7 @@ func TestTodayDependsOnTimezone(t *testing.T) {
 			t.Fatal(err)
 		}
 		if got := Today(now, loc); got != want {
-			t.Errorf("Today em %s = %s, quero %s", tz, got.Name(), want.Name())
+			t.Errorf("Today em %s = %d, quero %d", tz, got, want)
 		}
 	}
 }

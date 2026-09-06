@@ -8,19 +8,26 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/AdeptLabsDev/weeklly/internal/i18n"
 	"github.com/AdeptLabsDev/weeklly/internal/store"
 	"github.com/AdeptLabsDev/weeklly/internal/week"
 )
 
 // page é o que todo template recebe: o que a casca precisa (título, classe
-// do body, tema, navegação) e os dados da página em Data.
+// do body, tema, idioma, navegação) e os dados da página em Data.
 type page struct {
 	Title     string
 	BodyClass string
 	// Theme é "dark" ou "light"; render preenche a partir do cookie.
 	Theme string
-	Nav   navView
-	Data  any
+	// Cursor é "system" ou "custom"; Accent é "mono" ou uma cor de accents.
+	// Os dois vêm de cookies e viram atributos data-* no <html>.
+	Cursor string
+	Accent string
+	// L traduz; render preenche a partir do cookie ou do Accept-Language.
+	L    i18n.Locale
+	Nav  navView
+	Data any
 	// NewWeek alimenta o diálogo "Nova semana", presente em toda página.
 	NewWeek formView
 	// Rename e Delete alimentam os diálogos da semana aberta (só no quadro).
@@ -37,6 +44,30 @@ type navView struct {
 	Weeks   []weekLink
 	Current *weekLink
 	Order   string
+}
+
+// prefOption é uma opção de preferência no menu de configurações.
+type prefOption struct {
+	Value   string
+	Label   string
+	Current bool
+}
+
+// Cursors lista os tipos de cursor para o menu: sistema e o do produto.
+func (p page) Cursors() []prefOption {
+	return []prefOption{
+		{Value: cursorSystem, Label: p.L.T("cursor.system"), Current: p.Cursor == cursorSystem},
+		{Value: cursorCustom, Label: p.L.T("cursor.custom"), Current: p.Cursor == cursorCustom},
+	}
+}
+
+// Accents lista as cores de destaque para o menu, a atual marcada.
+func (p page) Accents() []prefOption {
+	out := make([]prefOption, 0, len(accents))
+	for _, a := range accents {
+		out = append(out, prefOption{Value: a, Label: p.L.T("accent." + a), Current: p.Accent == a})
+	}
+	return out
 }
 
 type userView struct {
@@ -64,6 +95,7 @@ type hubView struct {
 // formView serve o formulário de nome de semana, em página e em diálogo,
 // para criar e para renomear.
 type formView struct {
+	L       i18n.Locale
 	Heading string
 	Lead    string
 	Action  string
@@ -74,6 +106,7 @@ type formView struct {
 }
 
 type deleteView struct {
+	L      i18n.Locale
 	Action string
 	Name   string
 	Cancel string
@@ -104,51 +137,56 @@ type dayView struct {
 	Tasks    []taskView
 }
 
+// taskView é uma tarefa pronta para o template, com o Locale porque a
+// parcial também é renderizada sozinha, para o JSON.
 type taskView struct {
+	L     i18n.Locale
 	ID    string
 	Title string
 	Time  string
 	Done  bool
 }
 
-func newBoardView(w week.Week, today week.Weekday) boardView {
-	v := boardView{ID: w.ID, Name: w.Name, TodayLongName: today.LongName()}
+func newBoardView(l i18n.Locale, w week.Week, today week.Weekday) boardView {
+	v := boardView{ID: w.ID, Name: w.Name, TodayLongName: l.WeekdayLong(today)}
 	for i, d := range week.All() {
 		day := dayView{
 			Weekday:  int(d),
-			Name:     d.Name(),
-			LongName: d.LongName(),
-			Short:    d.Short(),
+			Name:     l.Weekday(d),
+			LongName: l.WeekdayLong(d),
+			Short:    l.WeekdayShort(d),
 			IsToday:  d == today,
 		}
 		for _, t := range w.Days[i] {
-			day.Tasks = append(day.Tasks, newTaskView(t))
+			day.Tasks = append(day.Tasks, newTaskView(l, t))
 		}
 		v.Days[i] = day
 	}
 	return v
 }
 
-func newTaskView(t week.Task) taskView {
-	return taskView{ID: t.ID, Title: t.Title, Time: t.Time, Done: t.Done}
+func newTaskView(l i18n.Locale, t week.Task) taskView {
+	return taskView{L: l, ID: t.ID, Title: t.Title, Time: t.Time, Done: t.Done}
 }
 
-func newWeekForm() formView {
+func newWeekForm(l i18n.Locale) formView {
 	return formView{
-		Heading: "Nova semana",
-		Lead:    "Dê um nome que diga para que ela serve.",
+		L:       l,
+		Heading: l.T("new.heading"),
+		Lead:    l.T("new.lead"),
 		Action:  "/semanas",
-		Submit:  "Criar semana",
+		Submit:  l.T("new.submit"),
 		Cancel:  "/semanas",
 	}
 }
 
-func renameForm(w week.Week) formView {
+func renameForm(l i18n.Locale, w week.Week) formView {
 	return formView{
-		Heading: "Renomear semana",
-		Lead:    "O nome novo vale em todo lugar: barra, lista e título.",
+		L:       l,
+		Heading: l.T("rename.heading"),
+		Lead:    l.T("rename.lead"),
 		Action:  weekURL(w.ID) + "/renomear",
-		Submit:  "Renomear",
+		Submit:  l.T("rename.submit"),
 		Cancel:  weekURL(w.ID),
 		Name:    w.Name,
 	}
@@ -157,6 +195,7 @@ func renameForm(w week.Week) formView {
 // nav monta a barra para a requisição. currentID é a semana aberta, ou vazio.
 func (s *Server) nav(r *http.Request, currentID string) (navView, error) {
 	v := currentVisitor(r)
+	l := s.locale(r)
 	if !v.ok {
 		return navView{Order: string(store.OrderRecent)}, nil
 	}
@@ -179,7 +218,7 @@ func (s *Server) nav(r *http.Request, currentID string) (navView, error) {
 			ID:        w.ID,
 			Name:      w.Name,
 			URL:       weekURL(w.ID),
-			Updated:   updatedLabel(w.UpdatedAt, now, s.opts.Config.Timezone),
+			Updated:   l.Updated(w.UpdatedAt, now, s.opts.Config.Timezone),
 			UpdatedAt: w.UpdatedAt.UTC().Format(time.RFC3339Nano),
 			Current:   w.ID == currentID,
 		}
@@ -198,28 +237,4 @@ func initial(name, email string) string {
 		}
 	}
 	return "?"
-}
-
-var monthsPT = [...]string{"", "janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"}
-
-// updatedLabel descreve quando a semana mudou pela última vez, na voz do
-// produto: "editada hoje", "editada ontem", "editada há 3 dias", "editada em
-// 12 de agosto".
-func updatedLabel(at, now time.Time, loc *time.Location) string {
-	a, n := at.In(loc), now.In(loc)
-	aDay := time.Date(a.Year(), a.Month(), a.Day(), 0, 0, 0, 0, loc)
-	nDay := time.Date(n.Year(), n.Month(), n.Day(), 0, 0, 0, 0, loc)
-	days := int(nDay.Sub(aDay).Hours() / 24)
-	switch {
-	case days <= 0:
-		return "editada hoje"
-	case days == 1:
-		return "editada ontem"
-	case days < 7:
-		return fmt.Sprintf("editada há %d dias", days)
-	case a.Year() == n.Year():
-		return fmt.Sprintf("editada em %d de %s", a.Day(), monthsPT[a.Month()])
-	default:
-		return fmt.Sprintf("editada em %d de %s de %d", a.Day(), monthsPT[a.Month()], a.Year())
-	}
 }

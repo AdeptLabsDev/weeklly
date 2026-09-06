@@ -19,10 +19,11 @@ const (
 // curto o que o retorno precisa conferir (D14).
 func (s *Server) handleLoginStart(w http.ResponseWriter, r *http.Request) {
 	if s.opts.Google == nil {
+		l := s.locale(r)
 		s.renderMessage(w, r, http.StatusServiceUnavailable, messageView{
-			Heading:  "Login ainda não configurado",
-			Body:     "Este ambiente não tem as credenciais do Google. Dá para usar o weeklly sem entrar: as semanas ficam neste navegador até você entrar em outro momento.",
-			LinkText: "Voltar",
+			Heading:  l.T("login.off.heading"),
+			Body:     l.T("login.off.body"),
+			LinkText: l.T("back"),
 			LinkURL:  "/",
 		})
 		return
@@ -49,21 +50,22 @@ func (s *Server) handleLoginCallback(w http.ResponseWriter, r *http.Request) {
 		challenge, ok = auth.DecodeChallenge(cookie.Value)
 	}
 	q := r.URL.Query()
+	l := s.locale(r)
 
 	if q.Get("error") != "" {
 		s.renderMessage(w, r, http.StatusOK, messageView{
-			Heading:  "Login cancelado",
-			Body:     "Você não entrou. Nada mudou por aqui.",
-			LinkText: "Voltar",
+			Heading:  l.T("login.cancelled.heading"),
+			Body:     l.T("login.cancelled.body"),
+			LinkText: l.T("back"),
 			LinkURL:  "/",
 		})
 		return
 	}
 	if !ok || q.Get("state") == "" || q.Get("state") != challenge.State || q.Get("code") == "" {
 		s.renderMessage(w, r, http.StatusBadRequest, messageView{
-			Heading:  "Não deu para entrar",
-			Body:     "O retorno do Google não bateu com o pedido, o que acontece quando o login demora mais de 10 minutos ou abre em outra aba. Tente de novo.",
-			LinkText: "Entrar com Google",
+			Heading:  l.T("login.mismatch.heading"),
+			Body:     l.T("login.mismatch.body"),
+			LinkText: l.T("login.mismatch.link"),
 			LinkURL:  "/entrar/google",
 		})
 		return
@@ -72,9 +74,9 @@ func (s *Server) handleLoginCallback(w http.ResponseWriter, r *http.Request) {
 	identity, err := s.opts.Google.Exchange(r.Context(), q.Get("code"), challenge)
 	if errors.Is(err, auth.ErrEmailUnverified) {
 		s.renderMessage(w, r, http.StatusForbidden, messageView{
-			Heading:  "E-mail sem confirmação",
-			Body:     "O Google não confirma o e-mail desta conta, e o weeklly só aceita e-mails confirmados. Use outra conta.",
-			LinkText: "Tentar com outra conta",
+			Heading:  l.T("login.unverified.heading"),
+			Body:     l.T("login.unverified.body"),
+			LinkText: l.T("login.unverified.link"),
 			LinkURL:  "/entrar/google",
 		})
 		return
@@ -82,9 +84,9 @@ func (s *Server) handleLoginCallback(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.opts.Logger.Error("login com google", "err", err, "request_id", requestID(r.Context()))
 		s.renderMessage(w, r, http.StatusBadGateway, messageView{
-			Heading:  "O Google não respondeu como esperado",
-			Body:     "Não foi possível confirmar sua conta agora. Tente de novo em instantes.",
-			LinkText: "Tentar de novo",
+			Heading:  l.T("login.failed.heading"),
+			Body:     l.T("login.failed.body"),
+			LinkText: l.T("login.failed.link"),
 			LinkURL:  "/entrar/google",
 		})
 		return
@@ -93,9 +95,9 @@ func (s *Server) handleLoginCallback(w http.ResponseWriter, r *http.Request) {
 	if err := s.signIn(w, r, identity); err != nil {
 		if errors.Is(err, store.ErrEmailTaken) {
 			s.renderMessage(w, r, http.StatusConflict, messageView{
-				Heading:  "Este e-mail já tem conta",
-				Body:     "Já existe uma conta com este e-mail ligada a outra forma de entrar. Entre por ela, ou use outra conta Google.",
-				LinkText: "Voltar",
+				Heading:  l.T("login.taken.heading"),
+				Body:     l.T("login.taken.body"),
+				LinkText: l.T("back"),
 				LinkURL:  "/",
 			})
 			return

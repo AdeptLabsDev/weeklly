@@ -10,13 +10,6 @@ import (
 	"github.com/AdeptLabsDev/weeklly/internal/week"
 )
 
-// MaxTasksPerDay é o limite de tarefas num dia. Um plano com mais que isso
-// não é um plano.
-const MaxTasksPerDay = 100
-
-// ErrDayFull é devolvido ao passar de MaxTasksPerDay.
-var ErrDayFull = fmt.Errorf("um dia comporta até %d tarefas", MaxTasksPerDay)
-
 // ownedTask restringe qualquer escrita em tarefas às semanas do usuário.
 const ownedTask = `id = ? AND week_id IN (SELECT id FROM weeks WHERE user_id = ?)`
 
@@ -53,8 +46,8 @@ func (s *Store) AddTask(ctx context.Context, userID, weekID string, day week.Wee
 	if err != nil {
 		return week.Task{}, err
 	}
-	if count >= MaxTasksPerDay {
-		return week.Task{}, ErrDayFull
+	if count >= week.MaxTasksPerDay {
+		return week.Task{}, week.ErrDayFull
 	}
 	t = week.Task{ID: ids.New(), Weekday: day, Position: next, Title: title, Time: at}
 	_, err = tx.ExecContext(ctx, `
@@ -193,8 +186,8 @@ func (s *Store) MoveTask(ctx context.Context, userID, taskID string, day week.We
 		`SELECT count(*) FROM tasks WHERE week_id = ? AND weekday = ? AND id != ?`, weekID, int(day), taskID).Scan(&others); err != nil {
 		return week.Task{}, err
 	}
-	if int(day) != fromDay && others >= MaxTasksPerDay {
-		return week.Task{}, ErrDayFull
+	if int(day) != fromDay && others >= week.MaxTasksPerDay {
+		return week.Task{}, week.ErrDayFull
 	}
 	if position > others {
 		position = others

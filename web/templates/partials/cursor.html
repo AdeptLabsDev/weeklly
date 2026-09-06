@@ -1,0 +1,11 @@
+{{define "cursor"}}
+{{/* Cursor do produto (D22): um elemento no top layer que segue o ponteiro.
+     O script o mostra só com ponteiro fino; sem script, ficam os cursores
+     do sistema. */}}
+<div class="cursor" popover="manual" aria-hidden="true" data-cursor>
+  <svg viewBox="0 0 32 32" width="32" height="32" fill="none">
+    <g class="cursor-arcs" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8.52 18.37A8.5 8.5 0 1 1 18.37 8.52"/><path d="M8.61 14.28A4.5 4.5 0 1 1 14.28 8.61"/></g>
+    <path class="cursor-arrow" d="M10 10L25.14 16.74Q26.6 17.4 25.07 17.88L21.32 19.06Q19.6 19.6 19.06 21.32L17.88 25.07Q17.4 26.6 16.74 25.14Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+  </svg>
+</div>
+{{end}}

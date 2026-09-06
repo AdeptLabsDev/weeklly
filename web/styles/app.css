@@ -40,6 +40,8 @@
   --color-danger-contrast: #ffffff;
   --color-glass: rgb(23 23 23 / 84%);
   --color-backdrop: rgb(0 0 0 / 60%);
+  --color-cursor: #ededed;
+  --color-cursor-fill: #0a0a0a;
 
   --shadow-card: 0 1px 2px rgb(0 0 0 / 40%), 0 24px 48px -28px rgb(0 0 0 / 80%);
   --shadow-float: 0 12px 32px -12px rgb(0 0 0 / 70%);
@@ -65,6 +67,8 @@
     --color-danger-contrast: #ffffff;
     --color-glass: rgb(255 255 255 / 86%);
     --color-backdrop: rgb(0 0 0 / 35%);
+    --color-cursor: #171717;
+    --color-cursor-fill: #ffffff;
     --shadow-card: 0 1px 2px rgb(0 0 0 / 6%), 0 20px 40px -28px rgb(0 0 0 / 25%);
     --shadow-float: 0 12px 32px -12px rgb(0 0 0 / 22%);
   }
@@ -75,6 +79,26 @@
   }
   :root[data-theme="light"] {
     color-scheme: light;
+  }
+  /* Cursor do produto (D22): com script e ponteiro fino, o cursor do sistema
+     some (html.has-cursor) e um elemento da página segue o ponteiro. Campos
+     de texto e áreas de escrita mantêm o I-beam do sistema. Sem script, ou
+     no toque, valem os cursores do sistema. */
+  :root {
+    --cursor: default;
+  }
+  html.has-cursor {
+    --cursor: none;
+  }
+  html {
+    cursor: var(--cursor);
+  }
+  a,
+  button,
+  summary,
+  label,
+  select {
+    cursor: inherit;
   }
   /* O grid de pontos cobre a página inteira: o quadro é o espaço, não uma
      caixa dentro dele (D11). */
@@ -165,6 +189,64 @@
     letter-spacing: -0.01em;
   }
 
+  /* ---- Cursor ------------------------------------------------------- */
+  /* Um popover manual: fica no top layer, acima de diálogos e menus (o script
+     o promove de novo sempre que algo abre). A ponta da seta é o ponto do
+     ponteiro; os arcos aparecem enquanto o botão está pressionado. */
+  .cursor {
+    position: fixed;
+    inset: 0 auto auto 0;
+    width: 32px;
+    height: 32px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+    color: var(--color-cursor);
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-100px, -100px);
+    will-change: transform;
+    transition: opacity 120ms ease;
+  }
+  .cursor.is-visible {
+    opacity: 1;
+  }
+  .cursor.is-native,
+  .cursor.is-captured {
+    opacity: 0;
+    transition: none;
+  }
+  .cursor svg {
+    display: block;
+    width: 32px;
+    height: 32px;
+    margin: -9.5px 0 0 -9.5px;
+    overflow: visible;
+    filter: drop-shadow(0 1px 1px rgb(0 0 0 / 25%));
+  }
+  .cursor-arrow {
+    fill: var(--color-cursor-fill);
+    transform-box: view-box;
+    transform-origin: 10px 10px;
+    transition: transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .cursor-arcs {
+    opacity: 0;
+    transform: scale(0.55);
+    transform-box: view-box;
+    transform-origin: 10px 10px;
+    transition: opacity 90ms ease, transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .cursor.is-pressing .cursor-arcs {
+    opacity: 1;
+    transform: none;
+  }
+  .cursor.is-pressing .cursor-arrow {
+    transform: scale(0.94);
+  }
+
   /* ---- Barra de navegação ------------------------------------------- */
   .nav {
     display: flex;
@@ -235,7 +317,6 @@
     font-size: 22px;
     line-height: 1.2;
     letter-spacing: -0.01em;
-    cursor: pointer;
     touch-action: manipulation;
     transition: background-color 120ms ease;
   }
@@ -272,7 +353,6 @@
     line-height: 1;
     text-decoration: none;
     white-space: nowrap;
-    cursor: pointer;
     touch-action: manipulation;
     transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
   }
@@ -336,7 +416,6 @@
     border-radius: 999px;
     background: var(--color-surface);
     color: var(--color-ink);
-    cursor: pointer;
     overflow: hidden;
   }
   .avatar img,
@@ -424,7 +503,6 @@
     font: inherit;
     text-align: left;
     text-decoration: none;
-    cursor: pointer;
     transition: background-color 120ms ease;
   }
   .menu-item:hover {
@@ -465,8 +543,9 @@
     display: block;
   }
 
-  /* Ordem das semanas: controle segmentado com a pílula deslizando. */
-  .order {
+  /* Controle segmentado de duas opções, com a pílula deslizando: a ordem das
+     semanas. */
+  .segmented {
     position: relative;
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -474,7 +553,7 @@
     border-radius: 999px;
     background: var(--color-surface-2);
   }
-  .order-pill {
+  .segmented-pill {
     position: absolute;
     top: 2px;
     bottom: 2px;
@@ -485,10 +564,10 @@
     box-shadow: 0 1px 2px rgb(0 0 0 / 25%);
     transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
-  .order[data-order="name"] .order-pill {
+  .segmented[data-index="1"] .segmented-pill {
     transform: translateX(100%);
   }
-  .order-btn {
+  .segmented-btn {
     position: relative;
     z-index: 1;
     height: 26px;
@@ -501,11 +580,104 @@
     font-size: 12.5px;
     font-weight: 500;
     white-space: nowrap;
-    cursor: pointer;
     transition: color 200ms ease;
   }
-  .order-btn[aria-pressed="true"] {
+  .segmented-btn[aria-pressed="true"] {
     color: var(--color-ink);
+  }
+
+  /* Configurações: linhas "rótulo, valor". Uma linha com escolha abre um
+     painel próprio ao lado (menu-language), sem esticar este menu. */
+  .menu-settings {
+    left: auto;
+    right: var(--edge);
+    width: min(320px, calc(100vw - 2 * var(--edge)));
+  }
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--color-ink);
+    font: inherit;
+    text-align: left;
+    transition: background-color 120ms ease;
+  }
+  .setting-row:hover,
+  body:has(#language-menu:popover-open) .setting-row {
+    background: var(--color-surface-2);
+  }
+  .setting-label {
+    font-size: 14px;
+  }
+  .setting-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    color: var(--color-ink-muted);
+    transition: color 120ms ease;
+  }
+  .setting-row:hover .setting-value,
+  body:has(#language-menu:popover-open) .setting-value {
+    color: var(--color-ink);
+  }
+  .setting-chevron {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Painel de idioma: um menu pequeno que abre ao lado do de configurações,
+     ou abaixo quando não cabe (o script o posiciona; sem script, cobre o de
+     configurações). Entra deslizando de leve a partir do menu de origem. */
+  .menu-language {
+    left: auto;
+    right: var(--edge);
+    width: min(232px, calc(100vw - 2 * var(--edge)));
+    transition: opacity 160ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @starting-style {
+    .menu-language:popover-open {
+      opacity: 0;
+      transform: translateX(10px);
+    }
+  }
+  .menu-options {
+    display: grid;
+    gap: 2px;
+  }
+  .menu-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 8px 10px 8px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-ink);
+    font: inherit;
+    font-size: 14px;
+    text-align: left;
+    transition: background-color 120ms ease;
+  }
+  .menu-option:hover {
+    background: var(--color-surface-2);
+  }
+  .menu-option-check {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    opacity: 0;
+  }
+  .menu-option[aria-current="true"] .menu-option-check {
+    opacity: 1;
   }
 
   /* ---- Diálogos e formulários --------------------------------------- */
@@ -671,6 +843,24 @@
     gap: 24px;
     padding: 6px var(--edge) 0;
   }
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  /* Desfazer e refazer: dois botões quietos, apagados quando não há o que fazer. */
+  .history {
+    display: inline-flex;
+    gap: 2px;
+    margin-left: -8px;
+  }
+  .history .btn[disabled] {
+    opacity: 0.35;
+  }
+  .history .btn[disabled]:hover {
+    color: var(--color-ink-muted);
+  }
   .subtitle {
     margin: 0;
     font-size: 15px;
@@ -723,7 +913,6 @@
     overscroll-behavior-x: contain;
     scrollbar-width: none;
     touch-action: pan-x;
-    cursor: grab;
     mask-image: linear-gradient(to right, transparent, black var(--edge), black calc(100% - var(--edge)), transparent);
   }
   .board::-webkit-scrollbar {
@@ -733,7 +922,6 @@
     outline-offset: -2px;
   }
   .board.is-dragging {
-    cursor: grabbing;
     user-select: none;
   }
   .week {
@@ -823,7 +1011,7 @@
     gap: 8px;
     padding: 8px 10px 8px 4px;
     border-radius: 10px;
-    cursor: default;
+    cursor: var(--cursor);
     transition: background-color 120ms ease;
   }
   .task:hover,
@@ -841,7 +1029,6 @@
     border: 0;
     background: transparent;
     color: var(--color-ink-faint);
-    cursor: grab;
     opacity: 0;
     touch-action: none;
     transition: opacity 120ms ease;
@@ -853,9 +1040,6 @@
   .task:hover .task-grip,
   .task:focus-within .task-grip {
     opacity: 1;
-  }
-  .task-grip:active {
-    cursor: grabbing;
   }
   @media (hover: none) {
     .task-grip {
@@ -896,7 +1080,6 @@
     border-radius: 6px;
     background: transparent;
     color: var(--color-accent-contrast);
-    cursor: pointer;
     transition: background-color 120ms ease, border-color 120ms ease;
   }
   .task-check svg {
@@ -949,7 +1132,6 @@
     font-size: 12.5px;
     font-variant-numeric: tabular-nums;
     line-height: 1.3;
-    cursor: pointer;
   }
   .task-time svg {
     width: 13px;
@@ -975,7 +1157,6 @@
     border-radius: 6px;
     background: transparent;
     color: var(--color-ink-faint);
-    cursor: pointer;
     opacity: 0;
     transition: opacity 120ms ease, color 120ms ease;
   }
@@ -1073,7 +1254,6 @@
     font-size: 13.5px;
     font-variant-numeric: tabular-nums;
     text-align: left;
-    cursor: pointer;
   }
   .timepick-option:hover,
   .timepick-option.is-active {
@@ -1101,7 +1281,6 @@
     border-radius: 9px;
     background: var(--color-surface);
     color: var(--color-ink);
-    cursor: pointer;
     transition: background-color 120ms ease;
   }
   .task-add-btn:hover {
@@ -1129,7 +1308,6 @@
     color: var(--color-ink-faint);
     font: inherit;
     font-size: 13px;
-    cursor: pointer;
     touch-action: manipulation;
     transition: color 160ms ease, background-color 160ms ease;
   }
